@@ -17,7 +17,7 @@ def send_message(channel, msg):
         response = slack_client.chat_postMessage(channel=channel, text=msg)
         print(response)
     except SlackApiError as e:
-        print(f"message: {e.message}, response: {e.response}")
+        print(f"message: {e}, response: {e.response}")
 
 
 def send_direct_message(email, msg):
@@ -25,24 +25,22 @@ def send_direct_message(email, msg):
         response = slack_client.chat_postMessage(channel=find_user_id(email), text=msg)
         print(response)
     except SlackApiError as e:
-        print(f"message: {e.message}, response: {e.response}")
+        print(f"message: {e}, response: {e.response}")
 
 
 def send_file(channel, file_path, file_title, comment):
     try:
-        response = slack_client.files_upload(channels=channel, file=file_path, title=file_title,
-                                             initial_comment=comment)
+        response = slack_client.files_upload(channels=channel, file=file_path, title=file_title, initial_comment=comment, message=comment)
         print(response)
     except SlackApiError as e:
-        print(f"message: {e.message}, response: {e.response}")
-
+        print(f"message: {e}, response: {e.response}")
 
 def send_apk(channel, file_path):
     try:
         response = slack_client.files_upload(channels=channel, file=file_path, filetype="apk")
         print(response)
     except SlackApiError as e:
-        print(f"message: {e.message}, response: {e.response}")
+        print(f"message: {e}, response: {e.response}")
 
 
 def get_channel(channel_text):
