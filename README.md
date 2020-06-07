@@ -26,6 +26,11 @@ You can install mingw64 or git bash through Chocolatey for best result.
 
 Windows Jenkins will not run git command with any other Linux shell like Window-Linux or cygwin due to Different in window directory path.
 
+
+Install python on all build agents.
+
+Go into jenkins settings/ Manage Nodes and set all agents with tags "Windows" so pipeline will run when finding agents. (remove agents option from Jenkinsfile if you dont want to use tags)
+
 # Enviroment Variables Requirements
 
 **IMPORANT** Make sure git Bash or mingw64 bash.exe be on top in `Path` environment. Other linux shell command can still be accessible when use in pipeline.
