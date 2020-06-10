@@ -14,6 +14,7 @@ import Config
 project_folder = Config.read_config(Config.KEY.UNITY_PROJECT)
 version = Config.read_config(Config.KEY.RELEASE_VERSION)
 unity_path = Config.read_config(Config.KEY.UNITY_PATH)
+unity_version = Config.read_config(Config.KEY.UNITY_VERSION)
 
 build_folder = os.path.join(project_folder, "build")
 
@@ -43,15 +44,17 @@ for f in os.listdir(build_folder):
         new_aab_file = os.path.join(release_folder, f)
         print(f"Copy: {aab_file} to {new_aab_file}")
         copyfile(aab_file, new_aab_file)
-    if "symbols.zip" in f:
+    if f.endswith(".symbols.zip"):
         symbol_file = os.path.join(build_folder, f)
         new_symbol_file = os.path.join(release_folder, f)
         print(f"Copy: {symbol_file} to {new_symbol_file}")
         copyfile(symbol_file, new_symbol_file)
         print("Create txt helper to know unity version when debug symbol link")
-        editor_hint_file = os.path.join(build_folder, f +"." + "editor.txt")
+        editor_hint_file = os.path.join(release_folder, f +"." + "editor.txt")
         with open(editor_hint_file, "w") as file:
             file.write(unity_path)
+            file.write("\n")
+            file.write(unity_version)
         
 
 
