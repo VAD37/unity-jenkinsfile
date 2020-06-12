@@ -2,7 +2,7 @@
   "name": "com.vad37.unity-jenkinsfile",
   "displayName": "Jenkinsfile builder",
   "description": "For personal use",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "unity": "2018.1",
   "repository": {
     "type": "git",

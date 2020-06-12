@@ -48,6 +48,46 @@ After reset environment. Restart server.
 
 ## Helpful tips
 
+For setting up project password and pre-build function use `IPreprocessBuildWithReport`
+
+```cs
+using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
+using UnityEditor.Callbacks;
+using UnityEngine;
+
+
+public class BuildProcessor : IPreprocessBuildWithReport {
+    
+    [PostProcessBuild(1)]
+    public static void DeleteDebugPrefabInResources(BuildTarget target, string pathToBuiltProject) {
+        Debug.Log( pathToBuiltProject );        
+    }
+
+    public int callbackOrder { get; }
+    public void OnPreprocessBuild(BuildReport report)
+    {
+        var pipeline = Builder.Configs["PIPELINE"];
+        // 3 type of pipelien: production, develop, internal
+        if(pipeline != "production") 
+        {
+            // Add develop prefab to resource or create readable file in resources
+        }
+        
+        
+        PlayerSettings.Android.useCustomKeystore = true;
+        PlayerSettings.Android.keystoreName      = "Path to keystore file in project. The same one as in Editor";
+        PlayerSettings.Android.keyaliasName      = "";
+        PlayerSettings.Android.keyaliasPass      = "";
+        PlayerSettings.Android.keystorePass      = "";
+        PlayerSettings.Android.minSdkVersion     = AndroidSdkVersions.AndroidApiLevel19; // minium API for override adb install to work with        
+        AssetDatabase.SaveAssets();
+    }
+}
+```
+
+
 Search these Jenkins server plugins: All Blue Ocean, Job DSL, Pipeline, PowerShell
 
 Set Always scan with interval 1 minute because you dont have website server.
