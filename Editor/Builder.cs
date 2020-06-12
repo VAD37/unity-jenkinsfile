@@ -139,7 +139,7 @@ public static class Builder
 
         try
         {
-            var buildNumber = GetArgument("BUILD_NUMBER");
+            var buildNumber = GetEnvironmentVariable("BUILD_NUMBER");
             var buildCount = int.Parse(buildNumber);
             if(Configs.ContainsKey("BUILD_BASE_BUNDLE_VERSION")){       
                 var baseBuildCount = int.Parse(Configs["BUILD_BASE_BUNDLE_VERSION"]);            
@@ -151,9 +151,10 @@ public static class Builder
         }
         catch (System.Exception e)
         {
-            Console.WriteLine("ERROR::: MISSING Enviroment files");
+            Console.WriteLine("ERROR::: MISSING Enviroment for Build version");
             Console.WriteLine(e);
         }
+        
         var buildFolder =  Path.GetFullPath("build/");
         
         bool exists = System.IO.Directory.Exists(buildFolder);
@@ -169,11 +170,21 @@ public static class Builder
         for (int i = 0; i < length; i++) {
             if (args[i].Contains(name) &&
                 i != length - 1) { return args[i + 1]; }
+        }        
+        return null;
+    }
+
+    static string GetEnvironmentVariable(string name) {
+        var envs = Environment.GetEnvironmentVariables();
+        foreach (DictionaryEntry entry in envs) {        
+            if(name == entry.Key)
+                return entry.Value;
         }
         return null;
     }
 
     static void PrintAllEnviromentVariables() {
+        Console.WriteLine("----------START ENVIRONMENT VARIABLES---------");
         var envs = Environment.GetEnvironmentVariables();
         foreach (DictionaryEntry entry in envs) { Console.WriteLine(entry.Key + " " + entry.Value); }
 
@@ -182,8 +193,9 @@ public static class Builder
         for (int i = 0; i < length; i++) {
             if (args[i].Contains("-") &&
                 i + 1 != length)
-                Console.WriteLine("ENV::: " + args[i] + " " + args[++i]);
+                Console.WriteLine(args[i] + " " + args[++i]);
         }
+        Console.WriteLine("----------END ENVIRONMENT VARIABLES---------");
     }
 
     static string[] GetEnabledScenes() {
@@ -261,8 +273,7 @@ public static class Builder
                 var splits = line.Split('=');
                 string key = splits[0];
                 string value = splits.Length > 1 ? splits[1] : null;
-                _configs.Add(key, value);
-                Debug.Log("Found Config: " + key + " - " + value);
+                _configs.Add(key, value);                
             }
         } catch (Exception e) {
             Console.WriteLine("ERROR::: Broken config files");
