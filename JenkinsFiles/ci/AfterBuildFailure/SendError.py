@@ -14,12 +14,17 @@ import SlackCommand
 
 
 def find_errors_in_log(file):
+    first_line = 0
+    last_line = 0
     with open(file, 'r') as f:
         try:
             lines = f.readlines()
             for i, x in enumerate(lines):
                 if "-----CompilerOutput:-stdout--exitcode:" in x:
                     first_line = i + 3
+                if "Uploading Crash Report" in x and first_line == 0:
+                    first_line = i + 1
+                    last_line = len(lines) -1
                 if "-----EndCompilerOutput---------------" in x:
                     last_line = i - 1
             error_lines = lines[first_line:last_line]
@@ -73,11 +78,16 @@ if unity_failure_file:
     msg = f'''\
 {mention_user} {build_id} - {committer} | {branch}-{git_hash} | {git_body}
 Unity build *failure*
-```{filedata}```
+[FILEDATA]
 ```{errors}```
 Detail: {pipeline_url}
 \
 '''.format(length='multi-line', ordinal='second')
+
+    if not filedata:
+        msg.replace("[FILEDATA]",f"```{filedata}```")
+    else:
+        msg.replace("[FILEDATA]","")
     # SlackCommand.send_message(slack_channel, msg)
     SlackCommand.send_file(slack_channel, log_file, f"{build_id} log", msg)
     exit(0)

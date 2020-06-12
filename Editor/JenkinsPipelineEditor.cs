@@ -43,8 +43,18 @@ public static class JenkinsPipelineEditor
         var projectDir = new DirectoryInfo(Application.dataPath).Parent;
         var jenkinsfilePath = Path.Combine(projectDir.FullName, "Jenkinsfile");
         var gitRoot = GetProjectGitRoot();
+
+        string jenkinsPath = File.ReadAllText(jenkinsfilePath);
+        string truePath;
+        if (gitRoot != null) {
+            truePath = projectDir.FullName.Replace(gitRoot.FullName, "").TrimStart('\\', '/');
+            if (string.IsNullOrEmpty(truePath)) truePath = " ";
+        }
+        else
+            truePath = " ";
         
-        File.WriteAllText(jenkinsfilePath, File.ReadAllText(jenkinsfilePath).Replace("[PROJECTPATH]", gitRoot != null ? projectDir.FullName.Replace(gitRoot.FullName,"").TrimStart('\\','/') : " "));
+        string contents = jenkinsPath.Replace("[PROJECTPATH]",truePath);
+        File.WriteAllText(jenkinsfilePath, contents);
     }
 
     // find .git folder
