@@ -22,10 +22,10 @@ def run_command(command):
 # git info
 email = run_command("git log -1 --pretty=format:%ae")
 committer = run_command("git log -1 --pretty=format:%cn")
-git_body = run_command("git log -1 --pretty=format:%b")
+git_subject = run_command("git log -1 --pretty=format:%s")
 git_full_message = run_command("git log -1 --pretty=format:%B")
-if not git_body:
-    git_body = git_full_message
+if not git_subject:
+    git_subject = git_full_message
 git_hash = run_command("git log -1 --pretty=format:%h")
 
 # config
@@ -48,7 +48,7 @@ for file in os.listdir(build_folder):
         apk_file = os.path.join(build_folder, file)
         print("Found: " + apk_file)
         msg = f'''\
-        {build_id} - {committer} | {branch}-{git_hash} | {git_body}
+        {build_id} - {committer} | {branch}-{git_hash} | {git_subject}
         ```{git_full_message}```
         Unity build *SUCCESS*
         Detail: {pipeline_url}
@@ -58,7 +58,7 @@ for file in os.listdir(build_folder):
         aab_file = os.path.join(build_folder, file)
         print("Found: " + aab_file)
         msg = f'''\
-        {build_id} - {committer} | {branch}-{git_hash} | {git_body}
+        {build_id} - {committer} | {branch}-{git_hash} | {git_subject}
         ```{git_full_message}```
         Unity build production *SUCCESS*
         Detail: {pipeline_url}
