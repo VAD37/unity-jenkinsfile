@@ -54,6 +54,7 @@ For setting up project password and pre-build function use `IPreprocessBuildWith
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.Callbacks;
 using UnityEngine;
 
@@ -83,6 +84,8 @@ public class BuildProcessor : IPreprocessBuildWithReport {
         PlayerSettings.Android.keystorePass      = "";
         PlayerSettings.Android.minSdkVersion     = AndroidSdkVersions.AndroidApiLevel19; // minium API for override adb install to work with        
         AssetDatabase.SaveAssets();
+		
+		AddressableAssetSettings.BuildPlayerContent();
     }
 }
 ```
