@@ -177,8 +177,8 @@ public static class Builder
     static string GetEnvironmentVariable(string name) {
         var envs = Environment.GetEnvironmentVariables();
         foreach (DictionaryEntry entry in envs) {        
-            if(name == entry.Key)
-                return entry.Value;
+            if(name == entry.Key.ToString())
+                return entry.Value.ToString();
         }
         return null;
     }
