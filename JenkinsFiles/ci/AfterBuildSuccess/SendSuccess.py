@@ -48,20 +48,19 @@ for file in os.listdir(build_folder):
         apk_file = os.path.join(build_folder, file)
         print("Found: " + apk_file)
         msg = f'''\
-        {build_id} - {committer} | {branch}-{git_hash} | {git_subject}
-        ```{git_full_message}```
-        Unity build *SUCCESS*
-        Detail: {pipeline_url}
+{build_id} - {committer} | {branch}-{git_hash} | {git_subject}
+```{git_full_message}```
+Unity build *SUCCESS*
+Detail: {pipeline_url}
         '''.format(length='multi-line', ordinal='second')
         SlackCommand.send_file(slack_build_report_channel, apk_file, f"{file}", msg)
     if file.endswith(".aab"):
         aab_file = os.path.join(build_folder, file)
         print("Found: " + aab_file)
         msg = f'''\
-        {build_id} - {committer} | {branch}-{git_hash} | {git_subject}
-        ```{git_full_message}```
-        Unity build production *SUCCESS*
-        Detail: {pipeline_url}
-        GooglePlay Bundle file. Not for consumption
+{build_id} - {committer} | {branch}-{git_hash} | {git_subject}
+```{git_full_message}```
+Unity build production *SUCCESS*
+Detail: {pipeline_url}
         '''.format(length='multi-line', ordinal='second')
         SlackCommand.send_file(slack_production_channel, aab_file, f"{file}", msg)

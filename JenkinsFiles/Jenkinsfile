@@ -1,14 +1,14 @@
 pipeline {
       agent none // Choose agent from agent label inside each Stages.
     //For some case you want to build some headless server with unity linux that build/run on AWS for testing. Or run jenkins with docker
-    //Make another parralel stages that run only on slave machine with Linux Tags.
+    //Make another parallel stages that run only on slave machine with Linux Tags.
       options {
         skipDefaultCheckout(true) // skip git default checkout because it call git clean -xffd. It clean all ignore files included cached unity /library folder. use custom git clean flags for faster build.
         buildDiscarder(logRotator(numToKeepStr: '300', artifactNumToKeepStr: '15')) // Keep last 180 logs and latest 30 build artifacts
       }
 
     environment {
-        // This is unity folder from git root Make sure you dont have last slash
+        // This is unity folder from git root Make sure you do not have last slash
         // Ex: /Git root folder/Sub Folder/ Assets (Unity folder). Then root folder is Subfolder
         // Leave empty if no sub folder
         ROOT = '[PROJECTPATH]'
@@ -29,14 +29,16 @@ pipeline {
                         // Currently there is no way to get project path from jenkins
                         checkout scm
 
+                        // Debug. If you have important key set as variable
                         sh 'git config --list'
-                        // you never know what is missing on slave machine
                         sh 'printenv | sort'
+
                         script {
                             if (ROOT == ' ') {
-                                echo "Null Root. Set it to empty"
+                                echo "Null Root. Set it to empty" // To prevent archiveArtifacts null errors
                                 ROOT = ''
-                            }                            
+                            }
+                            // There is currently no way to pull git message first before checkout scm. So project must be pulled before checking skip CI
                             // Check if Skip this build. For case like chore(release) made by semantic-release. Which just update change log
                             def exitCode = sh(script:"python -u ./${ROOT}/ci/CheckSkipBuildCondition.py",returnStatus:true, label: 'Check Skip Pipeline Condition')
                             if (exitCode == 1) {
@@ -46,7 +48,7 @@ pipeline {
                         }
                     }
                 }
-                stage('Prepare Enviroment') {
+                stage('Prepare System Environment') {
                     environment {
                         DEPLOY_TO = sh(script:"python -u ./${ROOT}/ci/ChoosePipeline.py ${BRANCH_NAME}",returnStdout:true, label: "Choose Pipeline").trim()
                     }
@@ -55,7 +57,7 @@ pipeline {
                         stage('Install Unity') {
                             steps {
                                 echo 'Start Installing Unity'
-                                sh 'printenv | sort' // you never know what is missing on slave machine
+                                sh 'printenv | sort' // for debug purpose
                                 script {
                                     sh(script:"python -u ./${ROOT}/ci/ConfigUnityVersion.py", label: 'Config Unity')
                                     def available = sh(script:"python ./${ROOT}/ci/VerifyUnityInstallation.py",returnStatus:true, label: 'Verify Unity')
@@ -80,7 +82,6 @@ pipeline {
                                 echo 'Production Branch. Run Production build'
                                 SetConfig("UNITY_PRODUCTION_BUILD", "TRUE")
                                 ExecuteAllPythonScriptsInDirectory("BeforeProductionBuild")
-                                // powershell(script:'semantic-release --debug ', label: 'Semantic Release')
                             }
                         }
                         stage('Development Branch') {
@@ -123,8 +124,21 @@ pipeline {
                             ExecuteAllPythonScriptsInDirectory("BeforeBuild")
                             def powershellCommand = sh(script:"python -u ./${ROOT}/ci/UnityBuildCommand.py",returnStdout:true, label: 'Get Build Unity Command').trim()
                             echo "${powershellCommand} | Out-File ./${ROOT}/BuildErrorOutput.txt -Append"
-                            // Must have Stdout to prevent build fail and block pipeline
-                            def status = powershell([script: " ${powershellCommand} | Out-File ./${ROOT}/BuildErrorOutput.txt -Append", returnStatus:true, label:'Build unity'])
+
+                            try {
+                                timeout(time: 60, unit: 'MINUTES') {                                    
+                                    // Must have Stdout to prevent build fail and block pipeline
+                                    def status = powershell([script: " ${powershellCommand} | Out-File ./${ROOT}/BuildErrorOutput.txt -Append", returnStatus:true, label:'Build unity'])
+                                }
+                            } catch(err) { 
+                                // timeout reached or input false
+                                def user = err.getCauses()[0].getUser()
+                                if('SYSTEM' == user.toString()) { 
+                                    echo "Unity Build Timeout"
+                                    SetConfig("UNITY_BUILD_TIMEOUT", 'TRUE')
+                                }
+                            }
+
                             if (status != 0) {
                                 currentBuild.result = 'FAILED'
                                 // def output = readFile('BuildOutput.txt').trim()
@@ -161,7 +175,11 @@ pipeline {
 }
 
 def ExecuteAllPythonScriptsInDirectory(String subDirectory) {
-    sh(script:"python -u ./${ROOT}/ci/RunAllPythonScript.py ${subDirectory}", label: "Exec python in ${subDirectory}")
+    try {
+        sh(script:"python -u ./${ROOT}/ci/RunAllPythonScript.py ${subDirectory}", label: "Exec python in ${subDirectory}")
+    } catch (err) {
+        echo err.getMessage()
+    }
 }
 
 def SetConfig(String configKey, String configValue) {

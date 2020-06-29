@@ -24,7 +24,7 @@ def find_errors_in_log(file):
                     first_line = i + 3
                 if "Uploading Crash Report" in x and first_line == 0:
                     first_line = i + 1
-                    last_line = len(lines) -1
+                    last_line = len(lines) - 1
                 if "-----EndCompilerOutput---------------" in x:
                     last_line = i - 1
             error_lines = lines[first_line:last_line]
@@ -50,7 +50,7 @@ git_hash = run_command("git log -1 --pretty=format:%h")
 
 # config
 slack_channel = SlackCommand.find_user_id(email)
-#slack_channel = Config.read_config(Config.KEY.SLACK_ERROR_CHANNEL)
+# slack_channel = Config.read_config(Config.KEY.SLACK_ERROR_CHANNEL)
 log_file = Config.read_config(Config.KEY.UNITY_BUILD_LOG)
 
 unity_failure_file = Config.read_config(Config.KEY.UNITY_BUILD_FAILURE)
@@ -85,13 +85,12 @@ Detail: {pipeline_url}
 '''.format(length='multi-line', ordinal='second')
 
     if not filedata:
-        msg.replace("[FILEDATA]",f"```{filedata}```")
+        msg.replace("[FILEDATA]", f"```{filedata}```")
     else:
-        msg.replace("[FILEDATA]","")
+        msg.replace("[FILEDATA]", "")
     # SlackCommand.send_message(slack_channel, msg)
     SlackCommand.send_file(slack_channel, log_file, f"{build_id} log", msg)
     exit(0)
-
 
 # Send Build CRASH file
 if not Config.has_config(Config.KEY.UNITY_BUILD_FAILURE):
@@ -106,8 +105,6 @@ Detail: {pipeline_url}
 '''.format(length='multi-line', ordinal='second')
     SlackCommand.send_file(slack_channel, log_file, f"{build_id} log", msg)
     exit(0)
-
-
 
 # Send UNKNOWN ERROR
 print("Failed to find error")

@@ -1,4 +1,4 @@
-### Important Note how to use Jenkins Pipeline
+# Jenkins Pipeline configure
 
 ## Commit Message Reader
 Any commit contain these specific message in *header* not in body commit will trigger special script:
@@ -6,8 +6,8 @@ Any commit contain these specific message in *header* not in body commit will tr
 
 
 ## Unity Hub
-Unity hub always stuck when install through CLI. sometime not. It is required to sometime manually install Unity + Android.
-All SDK, NDK are predefined on Agent Server.
+Unity hub sometimes stuck when install through CLI. It is required to manually install Unity + Android.
+All SDK, NDK are predefined on Agent Server. And can be accessed and set through build script
 
 ## CI script
 Any extra script/function that any dev want to extent. Put them inside subfolder of `/ci/{Build Step}` to prevent change to Jenkinsfile and breaking pipeline
@@ -18,18 +18,23 @@ All python script expect the parent folder is Unity project root.
 ## Config
 All variable pass through CI script are saved inside `config.cfg` file in Unity Root folder
 
-Any variable inside config.cfg file must be in this format `StringVariable="Some value"` `NoSpaceVariable=Value` (No space between)
+Any variable inside config.cfg file must be in this linux shell format `StringVariable="Some value"` `NoSpaceVariable=Value` (No space between)
 
-# Config that can override value from default script
-`PRODUCTION_BUILD_METHOD_NAME=Builder.BuildDebug` Build script inside unity project. Note this can be override when use special branch like master
-`DEVELOP_BUILD_METHOD_NAME=Builder.BuildDebug` Build script inside unity project. Note this can be override when use special branch like master
-`INTERNAL_BUILD_METHOD_NAME=Builder.BuildDebug` Build script inside unity project. Note this can be override when use special branch like master
+## Config that can be overridden
+`PRODUCTION_BUILD_METHOD_NAME=Builder.BuildProduction` Build script run on branch with `production` in name. (not master)
+
+`DEVELOP_BUILD_METHOD_NAME=Builder.BuildDebug`  Build script run on branch with `develop` in name.
+
+`INTERNAL_BUILD_METHOD_NAME=Builder.BuildDebug`  Build script run on normal branch without `develop` or `master` in name.
 
 `BUILD_TARGET=Android` Unity build target (Standalone, Win, Win64, OSXUniversal, Linux64, iOS, Android, WebGL, XboxOne, PS4, WindowsStoreApps, Switch, tvOS)
+
 `UNITY_BUILD_PARAMS=""` Put any extra params want to pass into unity CLI like `-force-free  -nographics -noUpm` as long as the string value must include quote to prevent break CLI arguments reader
+
 `UNITY_MODULE="android"` The default extra Unityhub package when install new version of unity. The NDK/SDK always come with android
 
 `SLACK_BOT_TOKEN="xoxb-something"` Slack bot token to send log and error or build to default channel
+
 `SLACK_DEFAULT_CHANNEL=ci` Default slack channel for bot to send message
 
 `BUILD_BASE_BUNDLE_VERSION=0` Android Bundle Code version increment after build. Change Base to current GoogleStore version to prevent automated production build have lower version.
@@ -50,12 +55,13 @@ Ex: /.git root folder/Sub-folder/Assets . The root folder is Sub-folder
 
 
 
-### Helpful link for read document
+### Helpful link for Jenkins
 
 https://www.jenkins.io/doc/book/pipeline/syntax/
+
 https://www.jenkins.io/doc/pipeline/tour/running-multiple-steps/
 
-# Hidden Doc But most important
 https://www.jenkins.io/doc/pipeline/steps/workflow-durable-task-step/
+
 Go look inside empty Job or task on Jenkins server. They have  `Pipeline Syntax` that generated auto code for all function written in Jenkinsfile
 `http://localhost:8080/jenkins/job/{pipeline-name}/pipeline-syntax/`

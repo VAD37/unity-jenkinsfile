@@ -6,33 +6,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
-using System.Text;
 using UnityEngine;
 
 public static class Builder
 {
     private const string RootTools = "Tools/JenkinsPipeline/";
     
-    public static void BuildInternal()
-    {
-        BeforeBuild();
-
-        EditorUserBuildSettings.development    = true;
-        EditorUserBuildSettings.allowDebugging = true;
-        EditorUserBuildSettings.buildAppBundle = false;
-        SwitchScriptingImplement(ScriptingImplementation.Mono2x);
-        BuildPipeline.BuildPlayer(
-            GetEnabledScenes(),
-            GetFileName(),
-            BuildTarget.Android,
-            BuildOptions.Development | BuildOptions.AllowDebugging
-        );
-    }
-
     public static void BuildProduction()
     {
+        AddScriptingDefineSymbol("PRODUCTION");
         BeforeBuild();
-        
         EditorUserBuildSettings.development             = false;
         EditorUserBuildSettings.allowDebugging          = false;
         EditorUserBuildSettings.symlinkLibraries        = true;
@@ -56,8 +39,8 @@ public static class Builder
 
     public static void BuildDevelopment()
     {
+        AddScriptingDefineSymbol("DEVELOPMENT");
         BeforeBuild();
-
         EditorUserBuildSettings.development = true;
         EditorUserBuildSettings.allowDebugging = true;
         EditorUserBuildSettings.symlinkLibraries = false;
@@ -75,7 +58,6 @@ public static class Builder
     public static void BuildExportProject()
     {
         BeforeBuild();
-        
         EditorUserBuildSettings.development                  = false;
         EditorUserBuildSettings.allowDebugging               = false;
         EditorUserBuildSettings.symlinkLibraries             = true;
@@ -109,6 +91,16 @@ public static class Builder
             BuildOptions.AcceptExternalModificationsToPlayer | BuildOptions.Development
         );
     }
+    
+    public static void AddScriptingDefineSymbol(params string[] defines)
+    {
+        string definesString = PlayerSettings.GetScriptingDefineSymbolsForGroup ( EditorUserBuildSettings.selectedBuildTargetGroup );
+        List<string> allDefines = definesString.Split ( ';' ).ToList ();
+        allDefines.AddRange(defines);
+        PlayerSettings.SetScriptingDefineSymbolsForGroup (
+            EditorUserBuildSettings.selectedBuildTargetGroup,
+            string.Join ( ";", allDefines.ToArray () ) );
+    }
 
     [MenuItem(RootTools+"Show Current BuildPlayerOptions")]
     public static void PrintCurrentBuildSettings()
@@ -126,11 +118,11 @@ public static class Builder
     private static void BeforeBuild()
     {
         PrintAllEnviromentVariables();
+        WriteBuildInfoFile();
         // Change the game version and bundle version if config have it
         if (Configs.ContainsKey("RELEASE_VERSION")) {
             Console.WriteLine("LOG::: Found release version in config");
             PlayerSettings.bundleVersion = Configs["RELEASE_VERSION"];
-            // var version = new Version(Configs["RELEASE_VERSION"]);
         }
         else
         {
@@ -160,8 +152,13 @@ public static class Builder
         bool exists = System.IO.Directory.Exists(buildFolder);
         if(!exists)
             System.IO.Directory.CreateDirectory(buildFolder);
-
-        WriteBuildInfoFile();
+        
+        // AssetDatabase.SaveAssets();
+        // AddressableAssetSettings.CleanPlayerContent(AddressableAssetSettingsDefaultObject.Settings.ActivePlayerDataBuilder);
+        //
+        // Console.WriteLine("LOG::: Start Build addressable");
+        // AddressableAssetSettings.BuildPlayerContent();
+        // Console.WriteLine("LOG::: Build addressable Done");
     }
 
     static string GetArgument(string name) {
@@ -202,33 +199,19 @@ public static class Builder
         return (from scene in EditorBuildSettings.scenes where scene.enabled select scene.path).ToArray();
     }
 
+    // File name is simple. Only when archive/moving file. It change name
     public static string GetFileName(string extension = ".apk") {
-        string buildName = PlayerSettings.productName;
-        var projectDir = new DirectoryInfo(Application.dataPath).Parent;
-        
-        var    branch    = GetArgument("GIT_BRANCH");
-        var    commiter  = GetArgument("GIT_COMMITER_NAME");
-        var    id        = GetEnv("BUILD_ID");
-        var    time      = GetArgument("GIT_COMMITER_DATE");
-
-        string timeString = null;
-
-        if (DateTimeOffset.TryParseExact(time, "ddd MMM d HH:mm:ss yyyy K", CultureInfo.InvariantCulture, DateTimeStyles.None,
-                                         out var dto))
-            timeString = dto.DateTime.ToString("s");
-        if (DateTimeOffset.TryParseExact(time, "ddd, d MMM yyyy HH:mm:ss K", CultureInfo.InvariantCulture, DateTimeStyles.None,
-                                         out var dto2))
-            timeString = dto2.DateTime.ToString("s").Replace(":", "");
-        if (string.IsNullOrEmpty(timeString))
-            timeString = time;
-        
-        buildName = $"{timeString} {id}-{commiter}-{branch}-{buildName} {PlayerSettings.bundleVersion}" + extension;
-
-        var path       = Path.Combine(projectDir.FullName, "build", buildName);
-
-        Debug.Log(path);
+        string buildName  = PlayerSettings.productName;
+        var    projectDir = new DirectoryInfo(Application.dataPath).Parent;
+        buildName = $"{buildName}" + extension;
+        var path = Path.Combine(projectDir.FullName, "build", buildName);
         Console.WriteLine("BUILD PATH: " + path);
         return path;
+    }
+
+    public static string ReplaceInvalidChars(string filename)
+    {
+        return string.Join("_", filename.Split(Path.GetInvalidFileNameChars()));    
     }
     
     public static string GetFolderName() {
