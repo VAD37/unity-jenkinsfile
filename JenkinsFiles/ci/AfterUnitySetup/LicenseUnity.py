@@ -14,7 +14,7 @@ path = pathlib.Path(dir_path).parent
 
 logfile = os.path.join(path, "log_license.txt")
 
-unity_path = Config.read_config("UNITY_PATH").strip()
+unity_path = Config.read("UNITY_PATH").strip()
 
 for root, dirs, files in os.walk(path):
     for f in files:
@@ -22,7 +22,7 @@ for root, dirs, files in os.walk(path):
             license_file = (os.path.join(root, f))
             break
 
-Config.save_config("UNITY_LICENSE", '"' + license_file + '"')
+Config.write("UNITY_LICENSE", '"' + license_file + '"')
 
 license_file = (os.path.abspath(license_file))
 logfile = (os.path.abspath(logfile))

@@ -256,7 +256,7 @@ public static class Builder
                 var splits = line.Split('=');
                 string key = splits[0];
                 string value = splits.Length > 1 ? splits[1] : null;
-                _configs.Add(key, value);                
+                _configs.Add(key, value?.Replace("\"", ""));                
             }
         } catch (Exception e) {
             Console.WriteLine("ERROR::: Broken config files");

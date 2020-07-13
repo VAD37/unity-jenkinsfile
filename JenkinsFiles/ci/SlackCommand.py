@@ -5,11 +5,11 @@ import json
 
 # Read doc https://api.slack.com/methods/files.upload
 
-slack_token = Config.read_config(Config.KEY.SLACK_BOT_TOKEN).strip().replace('"', "")
+slack_token = Config.read(Config.KEY.SLACK_BOT_TOKEN).strip().replace('"', "")
 slack_client = WebClient(slack_token)
-slack_default_channel = Config.read_config(Config.KEY.SLACK_DEFAULT_CHANNEL).replace('"', "")
-slack_ci_channel = Config.read_config(Config.KEY.SLACK_BUILD_CHANNEL).replace('"', "")
-slack_log_channel = Config.read_config(Config.KEY.SLACK_ERROR_CHANNEL).replace('"', "")
+slack_default_channel = Config.read(Config.KEY.SLACK_DEFAULT_CHANNEL).replace('"', "")
+slack_ci_channel = Config.read(Config.KEY.SLACK_BUILD_CHANNEL).replace('"', "")
+slack_log_channel = Config.read(Config.KEY.SLACK_ERROR_CHANNEL).replace('"', "")
 
 
 def send_message(channel, msg):
@@ -34,6 +34,7 @@ def send_file(channel, file_path, file_title, comment):
         print(response)
     except SlackApiError as e:
         print(f"message: {e}, response: {e.response}")
+
 
 def send_apk(channel, file_path):
     try:

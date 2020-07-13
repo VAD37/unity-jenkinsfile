@@ -14,26 +14,30 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 path = pathlib.Path(dir_path)
 
 
-def execfile(filepath, globals=None, locals=None):
+def run_execute_file(file_path, globals=None, locals=None):
+    """
+    Copy from Stackoverflow
+    Run file python as raw text while keeping variable and path
+    """
     if globals is None:
         globals = {}
     globals.update({
-        "__file__": filepath,
+        "__file__": file_path,
         "__name__": "__main__",
     })
-    with open(filepath, 'rb') as file:
-        exec(compile(file.read(), filepath, 'exec'), globals, locals)
+    with open(file_path, 'rb') as file:
+        exec(compile(file.read(), file_path, 'exec'), globals, locals)
 
 
-def run_code_in_sub_directory(dirName):
-    subdir = os.path.join(path, dirName)
+def run_code_in_sub_directory(sub_directory_name):
+    subdir = os.path.join(path, sub_directory_name)
     run_success = True
     if os.path.exists(subdir):
         for filename in os.listdir(subdir):
             if filename.endswith(".py"):
                 print("Run Python Script: " + filename)
                 try:
-                    execfile(os.path.join(subdir, filename))
+                    run_execute_file(os.path.join(subdir, filename))
                 except Exception as e:
                     print("Caught exception:")
                     print(e)
@@ -58,7 +62,7 @@ if len(sys.argv) > 1:
 
 sys.stdout.flush()
 
-success = run_code_in_sub_directory("AfterBuild")
+success = run_code_in_sub_directory("AfterBuildSuccess")
 if not success:
     exit(1)
 exit(0)

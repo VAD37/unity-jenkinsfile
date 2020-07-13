@@ -9,7 +9,7 @@ import Config
 
 print("-----------CLEAN BUILD FOLDER-----------")
 
-projectDir = Config.read_config(Config.KEY.UNITY_PROJECT)
+projectDir = Config.read(Config.KEY.UNITY_PROJECT)
 buildFolder = os.path.join(projectDir, "build")
 
 print(f"Clean folder {buildFolder}")

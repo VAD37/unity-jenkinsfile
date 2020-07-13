@@ -1,21 +1,17 @@
-import inspect
 import os
 import subprocess
 import sys
 from shutil import copyfile
 from pathlib import Path
+from .. import Config
 
-currentFile = os.path.abspath(inspect.getfile(inspect.currentframe()))
-currentdir = os.path.dirname(currentFile)
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
+# import from parent folder
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
-import Config
-
-project_folder = Config.read_config(Config.KEY.UNITY_PROJECT)
-version = Config.read_config(Config.KEY.RELEASE_VERSION)
-unity_path = Config.read_config(Config.KEY.UNITY_PATH)
-unity_version = Config.read_config(Config.KEY.UNITY_VERSION)
+project_folder = Config.read(Config.KEY.UNITY_PROJECT)
+version = Config.read(Config.KEY.RELEASE_VERSION)
+unity_path = Config.read(Config.KEY.UNITY_PATH)
+unity_version = Config.read(Config.KEY.UNITY_VERSION)
 
 build_folder = os.path.join(project_folder, "build")
 
@@ -26,27 +22,28 @@ develop_folder = os.path.join(archive_folder, job_name, "develop")
 
 release_folder = os.path.join(archive_folder, job_name, "release")
 release_folder = os.path.join(release_folder, version)
-Path(release_folder).mkdir(parents=True, exist_ok=True)
+
+# make sure root folder exist
 Path(develop_folder).mkdir(parents=True, exist_ok=True)
 
 
-def run_command(command):
+def shell(command):
     return subprocess.run(command, stdout=subprocess.PIPE).stdout.decode('utf-8')
 
 
-def new_name(original: str):
-    commit_hash = run_command("git log -1 --pretty=format:%h")
-    branch = run_command("git rev-parse --abbrev-ref HEAD").strip()
+def new_name(original_name: str):
+    commit_hash = shell("git log -1 --pretty=format:%h")
+    branch = shell("git rev-parse --abbrev-ref HEAD").strip()
     # build_id        = os.environ("BUILD_ID")
     build_id = 200
-    time = run_command("git log -1 --pretty=format:%cI")
-    time = time.replace(":", "-")
-    time = time[:time.find('+')]
-    filename = f"{time} [{branch}] [{commit_hash}] [{version}] {original}"
-    print(f"Change file name from {original} to {filename}")
+    time = shell("git log -1 --pretty=format:%cI").replace(":", "-")
+    time = time[:time.find('+')]  # format time without timezone
+    filename = f"{time} [{branch}] [{commit_hash}] [{version}] {original_name}"
+    print(f"Change file name from {original_name} to {filename}")
     return filename
 
 
+# Scrap all files in /build and copy them to Backup Folder
 for f in os.listdir(build_folder):
     print("Check File: " + f)
     # Send apk to base folder with project name
@@ -59,11 +56,15 @@ for f in os.listdir(build_folder):
 
     # Send aab + symbol zip to release folder.
     if f.endswith(".aab"):
+        # make sure root folder exist
+        Path(release_folder).mkdir(parents=True, exist_ok=True)
         aab_file = os.path.join(build_folder, f)
         new_aab_file = os.path.join(release_folder, new_file_name)
         print(f"Copy: {aab_file} to {new_aab_file}")
         copyfile(aab_file, new_aab_file)
     if f.endswith(".symbols.zip"):
+        # make sure root folder exist
+        Path(release_folder).mkdir(parents=True, exist_ok=True)
         symbol_file = os.path.join(build_folder, f)
         new_symbol_file = os.path.join(release_folder, new_file_name)
         print(f"Copy: {symbol_file} to {new_symbol_file}")

@@ -51,10 +51,10 @@ git_hash = run_command("git log -1 --pretty=format:%h")
 # config
 slack_channel = SlackCommand.find_user_id(email)
 # slack_channel = Config.read_config(Config.KEY.SLACK_ERROR_CHANNEL)
-log_file = Config.read_config(Config.KEY.UNITY_BUILD_LOG)
+log_file = Config.read(Config.KEY.UNITY_BUILD_LOG)
 
-unity_failure_file = Config.read_config(Config.KEY.UNITY_BUILD_FAILURE)
-unity_project = Config.read_config(Config.KEY.UNITY_PROJECT)
+unity_failure_file = Config.read(Config.KEY.UNITY_BUILD_FAILURE)
+unity_project = Config.read(Config.KEY.UNITY_PROJECT)
 
 # jenkins
 pipeline_url = os.environ["RUN_DISPLAY_URL"]
@@ -75,14 +75,15 @@ if unity_failure_file:
     filedata = encoded_text.decode('utf-16le').strip()
     errors = find_errors_in_log(log_file)
 
-    msg = f'''\
+    msg = f"""\
 {mention_user} {build_id} - {committer} | {branch}-{git_hash} | {git_body}
 Unity build *failure*
-[FILEDATA]
-```{errors}```
+[FILE_DATA]
+```
+{errors}
+```
 Detail: {pipeline_url}
-\
-'''.format(length='multi-line', ordinal='second')
+"""
 
     if not filedata:
         msg.replace("[FILEDATA]", f"```{filedata}```")
@@ -93,7 +94,7 @@ Detail: {pipeline_url}
     exit(0)
 
 # Send Build CRASH file
-if not Config.has_config(Config.KEY.UNITY_BUILD_FAILURE):
+if not Config.has_key(Config.KEY.UNITY_BUILD_FAILURE):
     # Unity not throw build log => Crash
     print("Unity build crash.")
     errors = find_errors_in_log(log_file)
@@ -102,7 +103,7 @@ if not Config.has_config(Config.KEY.UNITY_BUILD_FAILURE):
 Unity build *CRASH*
 ```{errors}```
 Detail: {pipeline_url}
-'''.format(length='multi-line', ordinal='second')
+'''
     SlackCommand.send_file(slack_channel, log_file, f"{build_id} log", msg)
     exit(0)
 
@@ -113,7 +114,7 @@ msg = f'''\
 Unity build *CRASH*
 Unknown Reason. See stacktrace for more information
 Detail: {pipeline_url}
-'''.format(length='multi-line', ordinal='second')
+'''
 SlackCommand.send_file(slack_channel, log_file, f"{build_id} log", msg)
 
 exit(1)

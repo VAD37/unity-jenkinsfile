@@ -9,15 +9,6 @@ public static class JenkinsPipelineEditor
     private const string PackageName= "com.vad37.unity-jenkinsfile";
     private const string RootTools = "Tools/JenkinsPipeline/";
     
-    [MenuItem(RootTools + "Edit Config")]
-    private static void EditConfig()
-    {
-        // Open config file. No custom editor
-        var projectDir = new DirectoryInfo(Application.dataPath).Parent;
-        var configFile = Path.Combine(projectDir.FullName, "config.cfg");
-        System.Diagnostics.Process.Start(configFile);
-    }
-   
     [MenuItem(RootTools + "Install Pipeline (copy Jenkinsfile from package)")]
     private static void CopyPipelineScripts()
     {

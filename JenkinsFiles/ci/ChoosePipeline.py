@@ -10,7 +10,7 @@ then return correcting pipeline variable
 
 def set_pipeline(pipe):
     sys.stdout = open(os.devnull, 'w')
-    Config.save_config("PIPELINE", pipe)
+    Config.write("PIPELINE", pipe)
     sys.stdout = sys.__stdout__
     print(pipe)
     sys.stdout.flush()

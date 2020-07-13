@@ -8,14 +8,14 @@ Installation will going through shell script due UnityHub limitation
 """
 
 # cannot get this through UNITY_HUB
-location = os.environ.get("UNITY_INSTALL_LOCATION", 'C:\\Program Files\\Unity\\Hub\\Editor')
-unity_version = Config.read_config("UNITY_VERSION")
+location = os.environ.read("UNITY_INSTALL_LOCATION", 'C:\\Program Files\\Unity\\Hub\\Editor')
+unity_version = Config.read("UNITY_VERSION")
 
 unity_version = unity_version.strip()
 
 unity_path = os.path.join(location, unity_version, "Editor", "Unity.exe")
 
-Config.save_config("UNITY_PATH", f'"{unity_path}"')
+Config.write("UNITY_PATH", f'"{unity_path}"')
 
 print("Check Unity Installation: " + unity_path)
 

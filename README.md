@@ -12,24 +12,22 @@ Add this line to `manifest.json`
 
 `"com.vad37.unity-jenkinsfile": "https://github.com/VAD37/unity-jenkinsfile.git",`
 
-The script will copy all files to your Unity project. Access possible unity config in `Tools/Jenkins Build`
-
-If you manually copy them then change important *Static Variables* on top of `Jenkinsfile`
-
+Install pipeline through Tools/JenkinsPipeline/Install Pipeline. 
+Editor script will copy all necessary file to project directory
 ## Setup Jenkins Server
 
 It will take minimum 2 hours to setup fresh Jenkins master server. And several days to setup WebServer or local to debug build unity batchmode so prepare. 
 
 Due to limitation of Docker and Unity Linux during this project was made. It was much reliable to build Unity on Windows.
 
-**IMPORANT** must install mingw64 as **first** bash shell in Windows. If you dont know what is Mingw is, it is the same as Git Bash.
+**IMPORANT** must use Window Bash style like mingw64/git-bash as **first** bash shell in Windows.
 
 You can install mingw64 or git bash through Chocolatey for best result.
 
-Windows Jenkins will not run git command with any other Linux shell like Window-Linux or cygwin due to Different in window directory path.
+Windows Jenkins will not run git command with any other Linux shell like Window-Linux or cygwin due to different in window directory path.
 
 
-Install python3 on all build agents. (Jenkins pipeline run using `python` as default)
+Install **python3** on all build agents. (Jenkins pipeline run using `python` as default)
 
 Go into jenkins settings/ Manage Nodes and set all agents with tags "Windows" so pipeline will run when finding agents. (remove agents option from Jenkinsfile if you dont want to use tags)
 
@@ -46,7 +44,7 @@ After reset environment. Restart server.
 
 `UNITYHUB` : default to `C:\\Program Files\\Unity Hub\\Unity Hub.exe` (Required to install missing Unity version through Hub)
 
-`JENKINS_BUILD_ARCHIVE` : Second backup location for all build results files. Includes .aab and symbol link file for later debug. (If not set, Errors will be ignore and build file only accessible on jenkins server)
+`JENKINS_BUILD_ARCHIVE` : Master agent backup location for all build results files. Includes .aab and symbol link file for later debug. (If not set, Errors will be ignore and build file only accessible on jenkins server)
 
 ## Helpful tips
 
@@ -85,7 +83,7 @@ public class BuildProcessor : IPreprocessBuildWithReport {
         PlayerSettings.Android.keystorePass      = "";
         PlayerSettings.Android.minSdkVersion     = AndroidSdkVersions.AndroidApiLevel19; // minium API for override adb install to work with        
         AssetDatabase.SaveAssets();
-        // Do not build addressable here
+        // Do not call build addressable here. The editor wont delay build wait for addressable process
 
     }
 }
@@ -98,7 +96,7 @@ Search these Jenkins server plugins: All Blue Ocean, Job DSL, Pipeline, PowerShe
 
 Set Always scan with interval 1 minute because you dont have website server.
 
-For jenkinsfile detection. Remember to add `/subfolder/Jenkinsfile` if you Unity project have parent folder.
+For jenkinsfile detection in Jenkins Server setting. Remember to add `/subfolder/Jenkinsfile` if you Unity project have parent folder.
 
 In jenkins server installation folder. Change `jenkins.xml` similar line to this. Prevent run out of memory with java SDK
 

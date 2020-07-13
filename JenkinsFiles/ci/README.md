@@ -29,6 +29,8 @@ Any variable inside config.cfg file must be in this linux shell format `StringVa
 
 `BUILD_TARGET=Android` Unity build target (Standalone, Win, Win64, OSXUniversal, Linux64, iOS, Android, WebGL, XboxOne, PS4, WindowsStoreApps, Switch, tvOS)
 
+`UNITY_BUILD_ARGUMENTS="-quit -batchmode"` remove -quit if you want exit Unity through code
+
 `UNITY_BUILD_PARAMS=""` Put any extra params want to pass into unity CLI like `-force-free  -nographics -noUpm` as long as the string value must include quote to prevent break CLI arguments reader
 
 `UNITY_MODULE="android"` The default extra Unityhub package when install new version of unity. The NDK/SDK always come with android
