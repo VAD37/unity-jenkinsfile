@@ -29,8 +29,7 @@ if not git_subject:
 git_hash = run_command("git log -1 --pretty=format:%h")
 
 # config
-slack_build_report_channel = SlackCommand.get_channel(Config.read(Config.KEY.SLACK_BUILD_CHANNEL))
-slack_production_channel = SlackCommand.get_channel(Config.read(Config.KEY.SLACK_PRODUCTION_CHANNEL))
+slack_build_report_channel = SlackCommand.get_channel(Config.read(Config.KEY.SLACK_DEFAULT_CHANNEL))
 unity_project = Config.read(Config.KEY.UNITY_PROJECT)
 pipeline = Config.read(Config.KEY.PIPELINE)
 
@@ -63,6 +62,6 @@ Detail: {pipeline_url}
 Unity build production *SUCCESS*
 Detail: {pipeline_url}
         '''.format(length='multi-line', ordinal='second')
-        SlackCommand.send_file(slack_production_channel, aab_file, f"{file}", msg)
+        SlackCommand.send_file(slack_build_report_channel, aab_file, f"{file}", msg)
 
 

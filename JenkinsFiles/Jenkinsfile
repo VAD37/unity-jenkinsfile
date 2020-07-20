@@ -120,21 +120,21 @@ pipeline {
                                 echo "Add Root"
                                 ARTIFACT_BUILD_LOG = "${ROOT}/${ARTIFACT_BUILD_LOG}"
                                 ARTIFACT_BUILD_FOLDER = "${ROOT}/${ARTIFACT_BUILD_FOLDER}"
-                            } 
+                            }
 
                             ExecuteAllPythonScriptsInDirectory("BeforeBuild")
                             def powershellCommand = sh(script:"python -u ./${ROOT}/ci/UnityBuildCommand.py",returnStdout:true, label: 'Get Build Unity Command').trim()
                             echo "${powershellCommand} | Out-File ./${ROOT}/BuildErrorOutput.txt -Append"
 
                             try {
-                                timeout(time: 60, unit: 'MINUTES') {                                    
+                                timeout(time: 60, unit: 'MINUTES') {
                                     // Must have Stdout to prevent build fail and block pipeline
                                     def status = powershell([script: " ${powershellCommand} | Out-File ./${ROOT}/BuildErrorOutput.txt -Append", returnStatus:true, label:'Build unity'])
                                 }
-                            } catch(err) { 
+                            } catch(err) {
                                 // timeout reached or input false
                                 def user = err.getCauses()[0].getUser()
-                                if('SYSTEM' == user.toString()) { 
+                                if('SYSTEM' == user.toString()) {
                                     echo "Unity Build Timeout"
                                     SetConfig("UNITY_BUILD_TIMEOUT", 'TRUE')
                                 }
