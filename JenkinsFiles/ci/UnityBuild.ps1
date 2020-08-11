@@ -33,21 +33,24 @@ param (
     [string]$username, # not really needed if unity already activate through manual license
     [string]$password,
     [Alias("param")][string]$params, #any extra text to add in argurments
-    [Alias("arg","args")][string]$arguments = "-quit -batchmode",
-    [Alias("gitLog","git")][switch]$addGitLog # add author name, commit date, etc
+    [Alias("arg", "args")][string]$arguments = "-quit -batchmode",
+    [Alias("gitLog", "git", "addGitLog")][switch]$addGitLog # add author name, commit date, etc
 )
 
-if(!$unityPath){
+if (!$unityPath)
+{
     Get-Help $MyInvocation.MyCommand.Definition
     return
 }
 
-if(![System.IO.File]::Exists($unityPath)){
+if (![System.IO.File]::Exists($unityPath))
+{
     Write-Error "this unity path did not exist: " $unityPath
     exit 1;
 }
 
-if ([string]::IsNullOrEmpty($unityProject)) {
+if ( [string]::IsNullOrEmpty($unityProject))
+{
     Write-Host "Use current path as project folder: $PWD"
     $unityProject = pwd
 }
@@ -56,14 +59,17 @@ $stringbuilder = New-Object -TypeName System.Text.StringBuilder
 
 [void]$stringbuilder.Append($arguments)
 
-function AddArgument {
+function AddArgument
+{
     Param([string]$x, [string]$y)
-    if ($x -and $y) {
-        [void]$stringbuilder.AppendFormat(" -{0} `"{1}`"",$x,$y)
+    if ($x -and $y)
+    {
+        [void]$stringbuilder.AppendFormat(" -{0} `"{1}`"", $x, $y)
     }
 }
 
-if(![System.IO.Path]::IsPathRooted($logFile)){
+if (![System.IO.Path]::IsPathRooted($logFile))
+{
     $logFile = Join-Path $unityProject $logFile
 }
 
@@ -74,19 +80,22 @@ AddArgument "logFile" $logFile
 AddArgument "projectPath" $unityProject
 AddArgument "executeMethod"  $method
 
-[void]$stringbuilder.AppendFormat(" {0} ",$params)
+[void]$stringbuilder.AppendFormat(" {0} ", $params)
 
 
-function AddGitArgument {
+function AddGitArgument
+{
     Param([string]$x, [string]$y)
-    if ($x -and $y) {
+    if ($x -and $y)
+    {
         $y = "git log -1 --pretty=format:%$y"
         $y = Invoke-Expression $y
-        [void]$stringbuilder.AppendFormat(" -{0} `"{1}`"",$x,$y)
+        [void]$stringbuilder.AppendFormat(" -{0} `"{1}`"", $x, $y)
     }
 }
 
-if($addGitLog){
+if ($addGitLog)
+{
     # https://git-scm.com/docs/pretty-formats
     AddGitArgument GIT_AUTHOR_EMAIL ae
     AddGitArgument GIT_AUTHOR_NAME an
@@ -102,7 +111,7 @@ if($addGitLog){
     AddGitArgument GIT_SUBJECT s #first line of git message
     AddGitArgument GIT_BODY b
     AddGitArgument GIT_RAW_BODY B
-    AddArgument "GIT_BRANCH"  (git log -n 1 --pretty=%d | cut -d / -f 2 | sed -r 's/[)]+//g')
+    AddArgument "GIT_BRANCH"  (git log -n 1 --pretty = %d | cut -d / -f 2 | sed -r 's/[)]+//g')
 }
 
 
@@ -133,7 +142,8 @@ $stdout = $p.StandardOutput.ReadToEnd()
 $stderr = $p.StandardError.ReadToEnd()
 Write-Host "exit code: " + $p.ExitCode
 Write-Output "$stdout"
-if($stderr){
+if ($stderr)
+{
     Write-Error "$stderr"
 }
 exit $p.ExitCode

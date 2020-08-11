@@ -31,6 +31,9 @@ Install **python3** on all build agents. (Jenkins pipeline run using `python` as
 
 Go into jenkins settings/ Manage Nodes and set all agents with tags "Windows" so pipeline will run when finding agents. (remove agents option from Jenkinsfile if you dont want to use tags)
 
+Plugins Dependency:
+All Blue Ocean, Job DSL, Pipeline, PowerShell, Pyenv Pipeline Plugin
+
 # Enviroment Variables Requirements
 
 **IMPORANT** Make sure git Bash or mingw64 bash.exe be on top in `Path` environment. Other linux shell command can still be accessible when use in pipeline.
@@ -92,7 +95,6 @@ public class BuildProcessor : IPreprocessBuildWithReport {
 **NOTE:** if using Addressable. **Must** write custom build code. Addressable will not build with `IPreprocessBuildWithReport`
 . Read [pipeline doc](/JenkinsFiles/ci/README.md) for more info
 
-Search these Jenkins server plugins: All Blue Ocean, Job DSL, Pipeline, PowerShell
 
 Set Always scan with interval 1 minute because you dont have website server.
 

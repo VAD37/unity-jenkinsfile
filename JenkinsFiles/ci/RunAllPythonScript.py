@@ -2,8 +2,6 @@ import sys
 import os
 import pathlib
 import traceback
-import subprocess
-import logging
 
 """
 Run all python script in sub dir from this script

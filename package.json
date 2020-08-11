@@ -1,14 +1,22 @@
 {
   "name": "com.vad37.unity-jenkinsfile",
   "displayName": "Jenkinsfile builder",
-  "description": "For personal use",
-  "version": "1.0.1",
+  "description": "Editor script to automated setup custom workflow of Jenkinsfile\nMade it easy to setup jenkinsfile for new project.",
+  "version": "2.0.0",
   "unity": "2018.1",
+  "keywords": [
+    "jenkin",
+    "build",
+    "server",
+    "automated",
+    "ci"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/VAD37/unity-jenkinsfile.git"
   },
   "author": "vad37 <vad@vadomain.com> (https://github.com/VAD37)",
   "dependencies": {
-  }
+  },
+  "resolutionStrategy": "highest"
 }

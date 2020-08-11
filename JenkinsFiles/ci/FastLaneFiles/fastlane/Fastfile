@@ -1,0 +1,101 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Push a new beta build to TestFlight"
+  lane :publish do
+    #sh("ssh-add -l")
+
+    sync_code_signing(
+      type: "appstore", 
+      readonly: true
+    )
+
+    sh "printenv | sort"
+    
+    # unlock_keychain( # Unlock an existing keychain and add it to the keychain search list
+    #   path: "/Users/unimob/Library/Keychains/login.keychain-db",
+    #   password: "1234"
+    # )
+
+    update_project_provisioning(
+      profile: ENV["sigh_com.unimob.stickman.master.shadow_appstore_profile-path"], 
+      code_signing_identity: "Apple Distribution: UNIMOB VIET NAM COMPANY LIMITED (NYM6S93RTY)"
+    )
+
+    
+    sh "printenv | sort"
+
+    build_app(
+      clean: true,
+      export_team_id: CredentialsManager::AppfileConfig.try_fetch_value(:team_id),
+      # export_options: {
+      #   method: "Release",
+      #   signingStyle: "manual",
+      #   provisioningProfiles: { 
+      #     "com.Unimob.TestApk" => "match Appstore com.Unimob.TestApk"
+      #   }
+      # }
+    )
+
+
+    firebase_app_distribution(
+      app: "1:236940418125:ios:cb7da1f7111329d2c1d004",
+      firebase_cli_token: "1//0erIj2lxxXOq_CgYIARAAGA4SNwF-L9Irm8yKDqsoIvlnevUPOvnq8e5Qfflewk6_BTZ4x-Kj10RciA70CBVrTuL4OGiGPnrSJ7o",
+      testers_file: "firebase_testers.txt",
+      groups_file: "firebase_group_testers.txt",
+    )
+
+    
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+    )
+
+
+  end
+
+  lane :beta do
+    sync_code_signing(
+      type: "development", 
+      readonly: true
+    )
+    update_project_provisioning(
+      profile: ENV["sigh_com.Unimob.TestApk_development_profile-path"], 
+      code_signing_identity: "Apple Development: Dev Team (QD7FAMJR7S)"
+    )
+
+    build_app(
+      clean: true,
+      export_team_id: CredentialsManager::AppfileConfig.try_fetch_value(:team_id),
+      export_options: {
+        method: "development",
+        signingStyle: "manual",
+        provisioningProfiles: { 
+          "com.Unimob.TestApk" => "match Development com.Unimob.TestApk"
+        }
+      }
+    )
+
+
+    firebase_app_distribution(
+      app: "1:236940418125:ios:cb7da1f7111329d2c1d004",
+      firebase_cli_token: "1//0erIj2lxxXOq_CgYIARAAGA4SNwF-L9Irm8yKDqsoIvlnevUPOvnq8e5Qfflewk6_BTZ4x-Kj10RciA70CBVrTuL4OGiGPnrSJ7o",
+      testers_file: "firebase_testers.txt",
+      groups_file: "firebase_group_testers.txt"
+    )
+  end
+end

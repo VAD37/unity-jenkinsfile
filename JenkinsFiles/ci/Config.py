@@ -1,5 +1,7 @@
 import os
 import pathlib
+import fileinput
+import re
 import sys
 
 """
@@ -9,24 +11,8 @@ Shell can use source function to use cfg file
 
 
 class KEY(object):
-    """
-    Config static Key use in cfg file
-    """
-    UNITY_VERSION = "UNITY_VERSION"
-    UNITY_CHANGESET = "UNITY_CHANGESET"
-    UNITY_MODULE = "UNITY_MODULE"
-    UNITY_LICENSE = "UNITY_LICENSE"
-    UNITY_PATH = "UNITY_PATH"
-    UNITY_PROJECT = "UNITY_PROJECT"
-    BUILD_TARGET = "BUILD_TARGET"
-    PIPELINE = "PIPELINE"    
-    # Below are manually set config
-    # Unity method
-    PRODUCTION_BUILD_METHOD_NAME = "PRODUCTION_BUILD_METHOD_NAME"
-    DEVELOP_BUILD_METHOD_NAME = "DEVELOP_BUILD_METHOD_NAME"
-    INTERNAL_BUILD_METHOD_NAME = "INTERNAL_BUILD_METHOD_NAME"
-    DEFAULT_BUILD_METHOD_NAME = "DEFAULT_BUILD_METHOD_NAME"
-    UNITY_BUILD_ARGUMENTS = "UNITY_BUILD_ARGUMENTS"
+    # Manual set config
+    BUILD_METHOD_NAME = "BUILD_METHOD_NAME"
     UNITY_BUILD_PARAMS = "UNITY_BUILD_PARAMS"
     UNITY_BUILD_FAILURE = "UNITY_BUILD_FAILURE"
     UNITY_BUILD_LOG = "UNITY_BUILD_LOG"
@@ -34,11 +20,36 @@ class KEY(object):
     # Slack API
     SLACK_BOT_TOKEN = "SLACK_BOT_TOKEN"
     SLACK_DEFAULT_CHANNEL = "SLACK_DEFAULT_CHANNEL"
-    SLACK_ERROR_CHANNEL = "SLACK_ERROR_CHANNEL"
-    SLACK_BUILD_CHANNEL = "SLACK_BUILD_CHANNEL"
-    SLACK_PRODUCTION_CHANNEL = "SLACK_PRODUCTION_CHANNEL"
+
+    # Generate config env during CI
+    COMPANY_NAME = "COMPANY_NAME"
+    PROJECT_NAME = "PROJECT_NAME"
+    UNITY_VERSION = "UNITY_VERSION"
+    UNITY_CHANGESET = "UNITY_CHANGESET"
+    UNITY_MODULE = "UNITY_MODULE"
+    UNITY_LICENSE = "UNITY_LICENSE"
+    UNITY_PATH = "UNITY_PATH"
+    UNITY_PROJECT = "UNITY_PROJECT"
+    BUILD_TARGET = "BUILD_TARGET"
+    PIPELINE = "PIPELINE"
     # After Unity build config
     RELEASE_VERSION = "RELEASE_VERSION"
+    # Git commit info
+    GIT_BRANCH = "GIT_BRANCH"
+    GIT_AUTHOR_EMAIL = "GIT_AUTHOR_EMAIL"  # format:%ae
+    GIT_AUTHOR_NAME = "GIT_AUTHOR_NAME"  # format:%an
+    GIT_AUTHOR = "GIT_AUTHOR"  # format:%an
+    GIT_COMMIT_HASH = "GIT_COMMIT_HASH"  # format:%H
+    GIT_COMMIT_SHORT_HASH = "GIT_COMMIT_SHORT_HASH"  # format:%h
+    GIT_TREE_HASH = "GIT_TREE_HASH"  # format:%T
+    GIT_AUTHOR_DATE = "GIT_AUTHOR_DATE"  # format:%aD
+    GIT_COMMITER_NAME = "GIT_COMMITER_NAME"  # format:%cn
+    GIT_COMMITER = "GIT_COMMITER"  # format:%cn
+    GIT_COMMITER_EMAIL = "GIT_COMMITER_EMAIL"  # format:%ce
+    GIT_COMMIT_DATE = "GIT_COMMIT_DATE"  # format:%ci
+    GIT_SUBJECT = "GIT_SUBJECT"  # format:%s
+    GIT_BODY = "GIT_BODY"  # format:%b
+    GIT_RAW_BODY = "GIT_RAW_BODY"  # format:%B
 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -48,11 +59,7 @@ path = pathlib.Path(dir_path)
 config = os.path.join(path.parent, "config.cfg")
 
 
-def has_key(name):
-    """
-    :param name:
-    :return:
-    """
+def contain(name):
     with open(config, 'r') as file:
         filedata = file.readlines()
     for i, x in enumerate(filedata):
@@ -63,10 +70,6 @@ def has_key(name):
 
 
 def read(name):
-    """
-    Get Value from config
-    :return: null if not found
-    """
     with open(config, 'r') as file:
         filedata = file.readlines()
     for i, x in enumerate(filedata):
@@ -79,56 +82,53 @@ def read(name):
     return None
 
 
-def write(key, set_value):
-    """
-    # Config file in format Shell Config for .sh script
-    :param key:
-    :param set_value: string with space will be warped in quote
-    """
-    # if have space then wrap it around quote to String
-    if ' ' in set_value:
-        if not set_value.startswith('"') and not set_value.endswith('"'):
-            set_value = '"' + set_value + '"'
+# Config file in format Shell Config for .sh script
+def write(a1 :str, a2 :str):    
+    if a2 is None or a2 == "":
+        return
+    # if have space then wrap it around quote
+    if ' ' in a2:
+        a2 = a2.strip()
+        if not a2.startswith('"') and not a2.endswith('"'):
+            a2 = '"' + a2 + '"'
+
 
     # Read in the file
-    with open(config) as file:
-        content = file.readlines()
+    with open(config, 'r') as file:
+        filedata = file.readlines()
 
     found_line = False
-    for i, x in enumerate(content):
+    for i, x in enumerate(filedata):
         if not x:
             print("remove empty line at index " + i)
-            content.pop(i)
+            filedata.pop(i)
             continue
         splits = x.split("=")
 
         if len(splits) != 2:
             print("Wrong format. Remove: " + x)
-            content.pop(i)
+            filedata.pop(i)
             continue
 
-        if splits[0] == key:
-            print("Replace " + key + " from " + splits[1].strip() + " to " + set_value)
-            content[i] = key + "=" + set_value
+        if splits[0] == a1:
+            print("Replace " + a1 + " from " + splits[1].strip() + " to " + a2)
+            filedata[i] = a1 + "=" + a2
             found_line = True
     if not found_line:
-        value = key + "=" + set_value
+        value = a1 + "=" + a2
         print("Add new value " + value)
-        content.append(value)
+        filedata.append(value)
     # Write the file out again
     with open(config, 'w') as f:
-        for item in content:
+        for item in filedata:
             f.write(item.rstrip() + "\n")
 
 
 def print_all_config():
-    """
-Show All config for debug purpose
-    """
     print("------CONFIG------")
-    with open(config) as file:
-        content = file.readlines()
-    for i, x in enumerate(content):
+    with open(config, 'r') as file:
+        filedata = file.readlines()
+    for i, x in enumerate(filedata):
         print(x.strip())
     print("------CONFIG------")
 

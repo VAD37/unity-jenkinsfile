@@ -1,6 +1,9 @@
 {
     "name": "JenkinPipelineUpdaterEditor",
-    "references": [],
+    "references": [
+        "Unity.Addressables.Editor",
+        "Unity.2D.Sprite.Editor"
+    ],
     "includePlatforms": [
         "Editor"
     ],

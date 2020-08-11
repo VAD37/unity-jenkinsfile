@@ -5,7 +5,7 @@ import glob
 import subprocess
 
 """
-Find unity license file and install it using Unity inside config
+Find unity license file and install it using Unitypath inside config
 """
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -16,11 +16,17 @@ logfile = os.path.join(path, "log_license.txt")
 
 unity_path = Config.read("UNITY_PATH").strip()
 
+license_file = None
+
 for root, dirs, files in os.walk(path):
     for f in files:
         if f.endswith(".x.ulf"):
             license_file = (os.path.join(root, f))
             break
+
+if license_file is None:
+    print("No license file found. Ignore licensing unity")
+    exit(0)
 
 Config.write("UNITY_LICENSE", '"' + license_file + '"')
 

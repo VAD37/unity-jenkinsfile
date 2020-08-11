@@ -1,174 +1,209 @@
+def BUILD_TARGET = null
+
+node {
+    // Choose build ios or android based on Branch name.
+    // Can be override later in code build. But the agent build still gonna be the same
+    stage('Choose agent'){
+        sh 'printenv | sort'
+        if (env.BRANCH_NAME.toLowerCase().contains("ios")) {
+            BUILD_TARGET = "ios"
+        }
+        else {
+            BUILD_TARGET = "android"
+        }
+        echo "BUILD_TARGET: ${BUILD_TARGET}"
+    }
+}
+
+// Share pipeline between Windows and OS X because they both do same thing except build code
 pipeline {
-      agent none // Choose agent from agent label inside each Stages.
-    //For some case you want to build some headless server with unity linux that build/run on AWS for testing. Or run jenkins with docker
-    //Make another parallel stages that run only on slave machine with Linux Tags.
-      options {
+    agent { label BUILD_TARGET }
+    //For some case you want to build some headless server with unity linux that build/run on AWS for testing.
+    //Make another parralel stages that run only on slave machine with Linux Tags.
+    options {
+        disableConcurrentBuilds()  //each branch has 1 job running at a time
         skipDefaultCheckout(true) // skip git default checkout because it call git clean -xffd. It clean all ignore files included cached unity /library folder. use custom git clean flags for faster build.
-        buildDiscarder(logRotator(numToKeepStr: '300', artifactNumToKeepStr: '15')) // Keep last 180 logs and latest 30 build artifacts
-      }
+        buildDiscarder(logRotator(numToKeepStr: '300', artifactNumToKeepStr: '15')) // Default keep last 180 logs and latest 30 build artifacts. Will be override from Jenkins Settings website
+    }
 
     environment {
-        // This is unity folder from git root Make sure you do not have last slash
+        // This is unity folder from git root Make sure you dont have last slash
         // Ex: /Git root folder/Sub Folder/ Assets (Unity folder). Then root folder is Subfolder
-        // Leave empty if no sub folder
-        ROOT = '[PROJECTPATH]'
+        // Leave empty space if no sub folder. Jenkins do not accept null
+        ROOT = ' '
+        PYTHON_PATH = 'python3' // Will create virtual environment.
     }
+
     stages {
-        // Note that jenkin pipeline should not do any config. Only do step and call scripts. All stuff transfer variables between stage will be done in Python Scripts.
-        stage('Window') {
-            agent {    label 'windows' }
-            stages {
-                stage('Checkout') {
-                    steps {
-                        // prevent null project init on new branch
-                        sh 'git init'
-                        sh 'git clean -ffd'
-                        sh 'git config core.ignorecase false' // For Mac unity user or you have serialized case sensitive file
+        stage('Checkout') {
+            steps {
+                // prevent null project init on new branch
+                sh 'git init || echo "fail to init git branch"'
+                sh 'git clean -ffd'
+                sh 'git config core.ignorecase false' // For Mac unity user or you have serialized case sensitive file
+                // Jenkins git fetch and pull
+                checkout scm
 
-                        // Jenkins git fetch and pull
-                        // Currently there is no way to get project path from jenkins
-                        checkout scm
+                //Debug: you never know what is missing on slave machine
+                sh 'git config --list'                
+                sh 'printenv | sort'
 
-                        // Debug. If you have important key set as variable
-                        sh 'git config --list'
-                        sh 'printenv | sort'
-
-                        script {
-                            if (ROOT == ' ') {
-                                echo "Null Root. Set it to empty" // To prevent archiveArtifacts null errors
-                                ROOT = ''
-                            }
-                            sh(script:"pip install -r ./${ROOT}/requirements.txt", returnStatus:true, label: 'Install python requirements')
-                            // There is currently no way to pull git message first before checkout scm. So project must be fetched before checking skip CI
-                            // Check if Skip this build. For case like chore(release) made by semantic-release. Which just update change log
-                            def exitCode = sh(script:"python -u ./${ROOT}/ci/CheckSkipBuildCondition.py",returnStatus:true, label: 'Check Skip Pipeline Condition')
-                            if (exitCode == 1) {
-                                currentBuild.result = 'ABORTED'
-                                error('ABORT ABORT ABORT')
-                            }
+                script {
+                    echo "${ROOT}"
+                    if (ROOT == ' ') {
+                        echo "No Root. Set it to empty"
+                        ROOT = ''
+                    }
+                    withPythonEnv("${PYTHON_PATH}") {                                    
+                        sh("pip install -r ./${ROOT}/ci/requirements.txt")                                    
+                        // There is currently no way to pull git message first before checkout scm. So project must be fetched before checking skip CI
+                        // Check if Skip this build. For case like chore(release) made by semantic-release. Which just update change log
+                        def exitCode = sh(script:"python -u ./${ROOT}/ci/CheckSkipBuildCondition.py",returnStatus:true, label: 'Check Skip Pipeline Condition')
+                        if (exitCode == 1) {
+                            currentBuild.result = 'ABORTED'
+                            error('[skip ci] Skip build')
                         }
                     }
-                }
-                stage('Prepare System Environment') {
-                    environment {
-                        DEPLOY_TO = sh(script:"python -u ./${ROOT}/ci/ChoosePipeline.py ${BRANCH_NAME}",returnStdout:true, label: "Choose Pipeline").trim()
-                    }
-                    failFast true
-                    parallel {
-                        stage('Install Unity') {
-                            steps {
-                                echo 'Start Installing Unity'
-                                sh 'printenv | sort' // for debug purpose
-                                script {
-                                    sh(script:"python -u ./${ROOT}/ci/ConfigUnityVersion.py", label: 'Config Unity')
-                                    def available = sh(script:"python ./${ROOT}/ci/VerifyUnityInstallation.py",returnStatus:true, label: 'Verify Unity')
+                }               
+            }
+        }
+        stage('Prepare Enviroment') {
+            steps {
+                echo 'Start Installing Unity'
+                sh 'printenv | sort' // you never know what is missing on slave machine
 
-                                    if (available == 1) {
-                                        // install unity
-                                        echo 'Unity not available. Install through Unity hub. Timeout: 120m'
-                                        timeout(time: 120, unit: 'MINUTES') {
-                                            // Install success always return 1. So ignore failure
-                                            sh(script:"./${ROOT}/ci/install-unity.sh ",returnStdout:true ,returnStatus: true, label: 'Install Unity')
-                                        }
+                script {
+                    withPythonEnv("${PYTHON_PATH}") {
+                        sh(script:"python -u ./${ROOT}/ci/ConfigEnvironment.py", label: 'Config Unity')
+                        def available = sh(script:"python ./${ROOT}/ci/VerifyUnityInstallation.py",returnStatus:true, label: 'Verify Unity')
+                        def testConfig = GetConfig("BUILD_METHOD_NAME")
+                        echo "${testConfig}"
+                        if (available == 1) {
+                            // install unity
+                            echo 'Unity not available. Test install through Unity hub. Timeout: 120m' // u3d is a nice solution but have some issues with CI agent
+                            timeout(time: 120, unit: 'MINUTES') {
+                                // Install success always return 1. So ignore failure
+                                // TODO move this to gem U3d by dragon. Unityhub install not work with OS X
+                                echo "TODO install Unity android + macos"
+                            }
+                        }
+                        ExecuteAllPythonScriptsInDirectory("AfterUnitySetup")
+                    }
+                }                
+            }
+        }
+        stage('UnityBuild') {
+            environment {
+                ARTIFACT_BUILD_LOG = "buildlog.txt"
+            }
+            steps {
+                script {
+                    withPythonEnv("${PYTHON_PATH}") {
+                        ExecuteAllPythonScriptsInDirectory("BeforeBuild")
+                        try {
+                            timeout(time: 60, unit: 'MINUTES') {
+                                if (!isUnix()) {
+                                    def powershellCommand = sh(script:"python -u ./${ROOT}/ci/UnityBuildCommand.py -powershell",returnStdout:true, label: 'Get Build Unity Command').trim()
+                                    def windowStatus = powershell([script: " ${powershellCommand}", returnStatus:true, label:'Build unity'])
+                                    if (windowStatus != 0) {
+                                        echo "Build failed"
+                                        currentBuild.result = 'FAILED'
+                                        error 'Build Failed by Unity'
                                     }
-                                    ExecuteAllPythonScriptsInDirectory("AfterUnitySetup")
+                                }
+                                else {                                                
+                                    def shellCmd = sh(script:"python -u ./${ROOT}/ci/UnityBuildCommand.py -shell",returnStdout:true, label: 'Get Build Unity Command').trim()
+                                    def linuxStatus = sh([script: "${shellCmd}", returnStatus:true, label:'Build unity'])
+                                    if (linuxStatus != 0) {
+                                        echo "Build failed"
+                                        currentBuild.result = 'FAILED'
+                                        error 'Build Failed by Unity'
+                                    }
                                 }
                             }
+                        } catch(err) {
+                            // timeout reached or input false
+                            def user = err.getCauses()[0].getUser()
+                            if('SYSTEM' == user.toString()) {
+                                echo "Unity Build Timeout"
+                                SetConfig("UNITY_BUILD_TIMEOUT", 'TRUE')
+                            }
+                            echo err.getMessage()
                         }
-                        stage('Production Branch') {
-                            when {
-                                environment name: 'DEPLOY_TO', value: 'production'
-                            }
-                            steps {
-                                echo 'Production Branch. Run Production build'
-                                SetConfig("UNITY_PRODUCTION_BUILD", "TRUE")
-                                ExecuteAllPythonScriptsInDirectory("BeforeProductionBuild")
-                            }
-                        }
-                        stage('Development Branch') {
-                            when {
-                                environment name: 'DEPLOY_TO', value: 'develop'
-                            }
-                            steps {
-                                echo 'Develop Branch. Run Develop build'
-                                SetConfig("UNITY_DEVELOP_BUILD", "TRUE")
-                                ExecuteAllPythonScriptsInDirectory("BeforeDevelopmentBuild")
-                            }
-                        }
-                        stage('Internal Branch') {
-                            when {
-                                environment name: 'DEPLOY_TO', value: 'internal'
-                            }
-                            steps {
-                                echo 'Internal Branch. Run internal build'
-                                SetConfig("UNITY_INTERNAL_BUILD", "TRUE")
-                                ExecuteAllPythonScriptsInDirectory("BeforeInternalBuild")
-                            }
+                        
+                        echo "End Build Stage"
+                    }
+                }                
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: "${ARTIFACT_BUILD_LOG}" , allowEmptyArchive: true
+                    script {
+                        withPythonEnv("${PYTHON_PATH}") {
+                            ExecuteAllPythonScriptsInDirectory("AfterBuild")
                         }
                     }
                 }
-                stage('UnityBuild') {
-                    environment {
-                        //HACK: Set as environment due to Root folder can be null so set it later
-                        ARTIFACT_BUILD_LOG = "buildlog.txt"
-                        ARTIFACT_BUILD_FOLDER = "build/*"
+                failure {
+                    script {
+                        withPythonEnv("${PYTHON_PATH}") {
+                            ExecuteAllPythonScriptsInDirectory("AfterBuildFailure")
+                            sh (script:"cat buildlog.txt", label: 'Show build log') // Jenkins keep log for long time but not archive files
+                        }
                     }
-                    steps {
-                        // Keep this line here to prevent Blue Ocean UI bugs when powershell script return errors.
-                        script {
-                            if (ROOT != '') {
-                                echo "Add Root"
-                                ARTIFACT_BUILD_LOG = "${ROOT}/${ARTIFACT_BUILD_LOG}"
-                                ARTIFACT_BUILD_FOLDER = "${ROOT}/${ARTIFACT_BUILD_FOLDER}"
-                            }
+                }
+            }
+        }
+        // Only send test version to Test Flight.
+        // Android send apk to Tester or aab to Test version
+        stage('Publish') {
+            environment {           
+                ARTIFACT_BUILD_FILES = "none" //  file1, file2
+                // Fastlane variables requirements
+                LC_ALL="en_US.UTF-8"
+                LANG="en_US.UTF-8"
+            }
+            steps {
+                script {
 
-                            ExecuteAllPythonScriptsInDirectory("BeforeBuild")
-                            def powershellCommand = sh(script:"python -u ./${ROOT}/ci/UnityBuildCommand.py",returnStdout:true, label: 'Get Build Unity Command').trim()
-                            echo "${powershellCommand} | Out-File ./${ROOT}/BuildErrorOutput.txt -Append"
+                    if ("${BUILD_TARGET}" == "ios")
+                    {
+                        dir("${ROOT}/build_xcode") {
+                            sh "yes | cp -rf ../ci/FastLaneFiles/. ."
+                            sh "printenv | sort"
+                            withCredentials([string(credentialsId: 'KEYCHAIN_PASSWORD', variable: 'KEYCHAIN_PASS')]) {
+                                sshagent (credentials: ['appstore_github']) {
+                                    // Enable below code if fastlane still cant find ssh key.
+                                    // sh "ssh-add -A"                             
+                                    
+                                    // If not found keychain during fastlane then move all keychain from local to system.
+                                    // If that not work then use code below
+                                    sh "security list-keychains"
+                                    sh 'security -v unlock-keychain -p "${KEYCHAIN_PASS}" ~/Library/Keychains/login.keychain'
+                                    sh "security list-keychains"
 
-                            try {
-                                timeout(time: 60, unit: 'MINUTES') {
-                                    // Must have Stdout to prevent build fail and block pipeline
-                                    def status = powershell([script: " ${powershellCommand} | Out-File ./${ROOT}/BuildErrorOutput.txt -Append", returnStatus:true, label:'Build unity'])
+                                    sh "fastlane beta --verbose 2>&1 | tee ${workspace}/fastlane_log.txt ; ( exit \${PIPESTATUS[0]} )"
                                 }
-                            } catch(err) {
-                                // timeout reached or input false
-                                def user = err.getCauses()[0].getUser()
-                                if('SYSTEM' == user.toString()) {
-                                    echo "Unity Build Timeout"
-                                    SetConfig("UNITY_BUILD_TIMEOUT", 'TRUE')
-                                }
-                            }
-
-                            if (status != 0) {
-                                currentBuild.result = 'FAILED'
-                                // def output = readFile('BuildOutput.txt').trim()
-                                SetConfig("UNITY_BUILD_FAILURE", 'BuildErrorOutput.txt')
-                                error 'Build Failed by Unity'
                             }
                         }
                     }
-                    post {
-                        always {
-                            archiveArtifacts artifacts: "${ARTIFACT_BUILD_LOG}" //, allowEmptyArchive: true
-                            script {
-                                ExecuteAllPythonScriptsInDirectory("AfterBuild")
-                            }
-                        }
-                        success {
-                            archiveArtifacts artifacts: "${ARTIFACT_BUILD_FOLDER}", fingerprint: true , allowEmptyArchive: false
-                            script {
-                                ExecuteAllPythonScriptsInDirectory("AfterBuildSuccess")
-                            }
-                        }
-                        failure {
-                            script {
-                                ExecuteAllPythonScriptsInDirectory("AfterBuildFailure")
-                                sh (script:"cat ./${ROOT}/buildlog.txt", label: 'Show build log')
-                            }
 
+                    withPythonEnv("${PYTHON_PATH}") {              
+                        ARTIFACT_BUILD_FILES = sh(script:"python -u ./${ROOT}/ci/CreateArchiveFilesList.py",returnStdout:true, label: 'Get archives files').trim()
+                    }
+                }
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: "${ARTIFACT_BUILD_FILES}", fingerprint: true
+                    script {
+                        withPythonEnv("${PYTHON_PATH}") {
+                            ExecuteAllPythonScriptsInDirectory("AfterBuildSuccess")
                         }
                     }
+                }
+                failure {
+                    archiveArtifacts artifacts: "fastlane_log.txt" , allowEmptyArchive: true                    
                 }
             }
         }
@@ -180,9 +215,17 @@ def ExecuteAllPythonScriptsInDirectory(String subDirectory) {
         sh(script:"python -u ./${ROOT}/ci/RunAllPythonScript.py ${subDirectory}", label: "Exec python in ${subDirectory}")
     } catch (err) {
         echo err.getMessage()
+        unstable "Python script have errors. Mark stage as unstable"
     }
 }
 
 def SetConfig(String configKey, String configValue) {
     sh(script:"python -u ./${ROOT}/ci/Config.py ${configKey} ${configValue}", label: 'Set Config Value')
+}
+
+
+def GetConfig(String configKey) {
+    def value = sh(script:". ./${ROOT}/config.cfg | echo \$${configKey}",returnStdout:true, label: 'Get Build Unity Command').trim()
+    echo "${value}"
+    return value
 }
