@@ -1,123 +1,64 @@
-#Requires -RunAsAdministrator
+#/Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    .
-.DESCRIPTION
-    .
-.PARAMETER unityPath
-    Full or absolute path to unity.exe file. Remeber put path in quote mark "". Ex: -unityPath "C:\Program Files\Unity\Hub\Editor\2019.2.1f1\Editor\Unity"
-.PARAMETER logFile
+    Custom script to run Unity build in special CI env.
+    Due to Unity batchmode on Windows not run too well with JDK, NDK. This script prevent floating unity.exe failed to kill process. (this is Jenkins error due to new Unity process not call as sub-process)
+.PARAMETER configFile
     absolute path or just file name. Will join file name with current path if not full path.
-.PARAMETER method
-    Unity file and method function to call build. Normally static editor class function. Defautl: "Builder.Build"
-.PARAMETER username
-    Unity username account. dont use this if you already license unity on local machine
-.PARAMETER password
-    Unity password account. dont use this if you already license unity on local machine
-.PARAMETER params
-    Any extra args or other params you want to pass in Unity. It just add string to arguments call. So becareful for error format. Ex: -params "-RANDOM_VARIABLE "VAR1" -SWITCH_VARIABLE -FORCE_SOMETHING"
-.PARAMETER arguments
-    Unity batchmode cli command. Default: "-quit -batchmode". You can change it to "-quit -batchmode -accept-apiupdate"
-.PARAMETER gitLog
-    Call git log author and commit name from current folder and assign them to variable like GIT_AUHTOR, GIT_COMMITTER and add them to arguments.
-    https://git-scm.com/docs/pretty-formats
-.EXAMPLE
-    ./unity.ps1 -unityPath "C:\Program Files\Unity\Hub\Editor\2019.2.1f1\Editor\Unity.exe"  -method "BuildCommandClass.BuildDebug" -addGitLog
 #>
 param (
-    [Alias("unity")][string]$unityPath,
-    [Alias("log")][string]$logFile = "log.txt",
-    [Alias("target")][string]$buildTarget = "Win64",
-    [string]$unityProject,
-    [string]$method = "Builder.Build",
-    [string]$username, # not really needed if unity already activate through manual license
-    [string]$password,
-    [Alias("param")][string]$params, #any extra text to add in argurments
-    [Alias("arg","args")][string]$arguments = "-quit -batchmode",
-    [Alias("gitLog","git")][switch]$addGitLog # add author name, commit date, etc
+    [Alias("config")][string]$configFile
 )
 
-if(!$unityPath){
-    Get-Help $MyInvocation.MyCommand.Definition
-    return
-}
 
-if(![System.IO.File]::Exists($unityPath)){
-    Write-Error "this unity path did not exist: " $unityPath
+if (![System.IO.File]::Exists($configFile))
+{
+    Write-Error "this config file did not exist: $configFile" 
     exit 1;
 }
 
-if ([string]::IsNullOrEmpty($unityProject)) {
-    Write-Host "Use current path as project folder: $PWD"
-    $unityProject = pwd
-}
+Get-Content $configFile | foreach-object -begin {$table=@{}} -process { $k = [regex]::split($_,'='); if(($k[0].CompareTo("") -ne 0) -and ($k[0].StartsWith("[") -ne $True)) { $table.Add($k[0], $k[1]) } }
+
+$unityPath = $table["UNITY_PATH"]
 
 $stringbuilder = New-Object -TypeName System.Text.StringBuilder
 
-[void]$stringbuilder.Append($arguments)
-
-function AddArgument {
-    Param([string]$x, [string]$y)
-    if ($x -and $y) {
-        [void]$stringbuilder.AppendFormat(" -{0} `"{1}`"",$x,$y)
+# Find arg in Env or config find. then append to unity as command line
+function AddArgumentIfFound
+{
+    Param([string]$argName, [string]$variable)
+    if ([Environment]::GetEnvironmentVariable($variable))
+    {
+        [void]$stringbuilder.AppendFormat(" -{0} `"{1}`"", $argName, [Environment]::GetEnvironmentVariable($variable))
+    }
+    elseif ($table.ContainsKey($variable))
+    {        
+        [void]$stringbuilder.AppendFormat(" -{0} {1}", $argName, $table["$variable"])
     }
 }
 
-if(![System.IO.Path]::IsPathRooted($logFile)){
-    $logFile = Join-Path $unityProject $logFile
+
+foreach ($arg in $args)
+{
+    [void]$stringbuilder.AppendFormat(" {0} ", $arg)
 }
 
-AddArgument "username"  $username
-AddArgument "password"  $password
-AddArgument "buildTarget "  $buildTarget
-AddArgument "logFile" $logFile
-AddArgument "projectPath" $unityProject
-AddArgument "executeMethod"  $method
+AddArgumentIfFound "buildTarget "  "BUILD_TARGET"
+AddArgumentIfFound "logFile" "UNITY_BUILD_LOG"
+AddArgumentIfFound "projectPath" "UNITY_PROJECT"
+AddArgumentIfFound "executeMethod"  "BUILD_METHOD_NAME"
 
-[void]$stringbuilder.AppendFormat(" {0} ",$params)
-
-
-function AddGitArgument {
-    Param([string]$x, [string]$y)
-    if ($x -and $y) {
-        $y = "git log -1 --pretty=format:%$y"
-        $y = Invoke-Expression $y
-        [void]$stringbuilder.AppendFormat(" -{0} `"{1}`"",$x,$y)
-    }
-}
-
-if($addGitLog){
-    # https://git-scm.com/docs/pretty-formats
-    AddGitArgument GIT_AUTHOR_EMAIL ae
-    AddGitArgument GIT_AUTHOR_NAME an
-    AddGitArgument GIT_AUTHOR an
-    AddGitArgument GIT_COMMIT_HASH H
-    AddGitArgument GIT_COMMIT_SHORT_HASH h
-    AddGitArgument GIT_TREE_HASH T
-    AddGitArgument GIT_AUTHOR_DATE aD #author date, RFC2822 style
-    AddGitArgument GIT_COMMITER_NAME cn
-    AddGitArgument GIT_COMMITER cn
-    AddGitArgument GIT_COMMITER_EMAIL ce
-    AddGitArgument GIT_COMMITER_DATE cD
-    AddGitArgument GIT_SUBJECT s #first line of git message
-    AddGitArgument GIT_BODY b
-    AddGitArgument GIT_RAW_BODY B
-    AddArgument "GIT_BRANCH"  (git log -n 1 --pretty=%d | cut -d / -f 2 | sed -r 's/[)]+//g')
+if ($table.ContainsKey("UNITY_BUILD_PARAMS"))
+{ 
+    [void]$stringbuilder.AppendFormat(" {0} ", $table["UNITY_BUILD_PARAMS"].ToString().Trim('"'))
 }
 
 
-# the run command look something like this
-# $unity   -logfile "$logFile" `
-#          -executeMethod SuperSystems.UnityBuild.BuildCLI.PerformBuild `
-#          -quit `
-#          -batchmode `
-#          -username vaddummy@vadomain.com `
-#          -password Vaddummy123 `
-
-# Must run unity from new powershell so it excute on another thread => Not blocking jenkins if fail
+# Must run unity from new powershell so it excute as sub process => Jenkins can end process if Unity timeout or failure
+# Gradle build + il2cpp with unity on Windows have some very weird bugs that block CI if it have very specific compiler error.
 
 $arguments = $stringbuilder.ToString()
-Write-Host "Run unity with arguments:" $unityPath $arguments
+Write-Host "command line:" $unityPath $arguments
 $pinfo = New-Object System.Diagnostics.ProcessStartInfo
 $pinfo.FileName = $unityPath
 $pinfo.RedirectStandardError = $true
@@ -133,7 +74,8 @@ $stdout = $p.StandardOutput.ReadToEnd()
 $stderr = $p.StandardError.ReadToEnd()
 Write-Host "exit code: " + $p.ExitCode
 Write-Output "$stdout"
-if($stderr){
+if ($stderr)
+{
     Write-Error "$stderr"
 }
 exit $p.ExitCode

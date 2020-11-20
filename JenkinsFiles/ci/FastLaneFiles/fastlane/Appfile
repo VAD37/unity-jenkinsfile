@@ -1,0 +1,9 @@
+app_identifier("com.Unimob.TestApk") # The bundle identifier of your app
+apple_id("appstore@unimobgame.com") # Your Apple email address
+
+itc_team_id("119689468") # App Store Connect Team ID
+team_id("NYM6S93RTY") # Developer Portal Team ID
+
+
+# For more information about the Appfile, see:
+#     https://docs.fastlane.tools/advanced/#appfile

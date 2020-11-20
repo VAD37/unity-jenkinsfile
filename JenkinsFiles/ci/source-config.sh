@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -e -x
 
 # source here mean take all cfg file and turn them into variable use in this script
 # .cfg must be in format var=value   . No space between
@@ -17,3 +17,8 @@ while read v; do
             #echo "Value of $n is ${!n}" ;;
     esac
 done <"$config"
+
+
+function set_config(){
+    sudo sed -i "s/^\($1\s*=\s*\).*\$/\1$2/" $CONFIG
+}
