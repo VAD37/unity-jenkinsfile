@@ -34,7 +34,6 @@ build_folder = os.path.join(unity_project, "build")
 # Not use function def due to function not get local variable run in jenkins
 for file in os.listdir(build_folder):
     print("Check File: " + file)
-    # send apk file
     if file.endswith(".apk"):
         apk_file = os.path.join(build_folder, file)
         print("Found: " + apk_file)
@@ -48,7 +47,6 @@ Detail: {pipeline_url}
 '''
         SlackCommand.send_file(slack_channel, apk_file, f"{file}", msg)
 
-    # send aab
     if file.endswith(".aab"):
         aab_file = os.path.join(build_folder, file)
         print("Found: " + aab_file)
@@ -61,16 +59,3 @@ Unity build production *SUCCESS*
 Detail: {pipeline_url}
 '''
         SlackCommand.send_file(slack_channel, aab_file, f"{file}", msg)
-
-# check tag in commit and mention that person to slack
-
-
-found_tags = []
-for tag in git_full_message.split():
-    if tag.startswith("#"):
-        tag = tag.strip("#")
-        found_tags.append(tag)
-
-for tag in found_tags:
-    mention = SlackCommand.get_mention_list(tag)
-    SlackCommand.send_message(slack_channel, mention)

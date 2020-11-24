@@ -2,7 +2,7 @@
   "name": "com.vad37.unity-jenkinsfile",
   "displayName": "Jenkinsfile builder",
   "description": "This package is only a copy jenkins CI project. You only need one script in this package for this custom CI builder to run.",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "unity": "2018.1",
   "repository": {
     "type": "git",
@@ -10,5 +10,6 @@
   },
   "author": "vad37 <vad@vadomain.com> (https://github.com/VAD37)",
   "dependencies": {
+      "com.unity.addressables": "1.8.5"
   }
 }

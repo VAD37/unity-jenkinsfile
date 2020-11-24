@@ -113,12 +113,17 @@ pipeline {
                 always {
                     archiveArtifacts artifacts: "buildlog.txt , build/Android/*" , allowEmptyArchive: true
                     script {
-                        ExecuteAllPythonScriptsInDirectory("AfterBuild")                        
+                        ExecuteAllPythonScriptsInDirectory("AfterBuild")
                     }
                 }
                 failure {
                     script {
                         ExecuteAllPythonScriptsInDirectory("AfterBuildFailure")
+                    }
+                }
+				success {
+                    script {
+                        ExecuteAllPythonScriptsInDirectory("AfterBuildSuccess")
                     }
                 }
             }

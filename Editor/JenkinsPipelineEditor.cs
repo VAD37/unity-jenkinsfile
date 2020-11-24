@@ -76,17 +76,24 @@ public static class JenkinsPipelineEditor
     [MenuItem(RootTools+"Force Update Package")]
     private static void RemoveLockFileFromManifest() {
         
-        var dir  = Path.GetFullPath("Packages/manifest.json");;
-        var text = File.ReadAllText(dir);
+        var jsonLock  = Path.GetFullPath("Packages/packages-lock.json");
+        if (System.IO.File.Exists(jsonLock))
+            File.Delete(jsonLock);
+        // Remove old package json lock from version 2018
+        try
+        {
+            var dir  = Path.GetFullPath("Packages/manifest.json");
+            var text = File.ReadAllText(dir);
 
-
-        var startLock         = text.IndexOf($"\"lock\"",          StringComparison.Ordinal);
-        var startPackageName  = text.IndexOf($"\"{PackageName}\"", startLock,        StringComparison.Ordinal);
-        var endPackageBracket = text.IndexOf("}",                  startPackageName, StringComparison.Ordinal);
-
-        text = text.Remove(startPackageName, endPackageBracket - startPackageName + 1);
-        File.WriteAllText(dir, text);
-        
-        AssetDatabase.Refresh();
+            var startLock         = text.IndexOf($"\"lock\"",          StringComparison.Ordinal);
+            var startPackageName  = text.IndexOf($"\"{PackageName}\"", startLock,        StringComparison.Ordinal);
+            var endPackageBracket = text.IndexOf("}",                  startPackageName, StringComparison.Ordinal);
+            text = text.Remove(startPackageName, endPackageBracket - startPackageName + 1);
+            File.WriteAllText(dir, text);
+            AssetDatabase.Refresh();
+        }
+        catch (Exception e)
+        {
+        }
     }
 }
