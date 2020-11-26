@@ -1,6 +1,12 @@
 # Unity Jenkinsfile
 
-Multi-branch Jenkinsfile and python script for automated **Android** build Production: Install Unity -> Build Unity -> Send Slack notification.
+Note: Currently this project is used for internal-team at my work place. There might some missing doc and setup not included and project is in development.
+
+Although it is ready to run with any random project. Work for both building simple Android and fastlane build for iOS.
+Just drag these files in and it will run on your Jenkins Server.
+
+
+Multi-branch Jenkinsfile and python script for automated **Android** build Production: Install Unity -> Build Unity --> Push to internal Google Play -> Send Slack notification.
 
 Made specifically for Windows Standalone Server. (Meaning no special install and setup for server. Just install jenkins setup some system variables and it will ready to go)
 
