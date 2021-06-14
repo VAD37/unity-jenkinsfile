@@ -1,3 +1,0 @@
-slackclient
-pathlib
-PyYAML
