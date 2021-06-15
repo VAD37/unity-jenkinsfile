@@ -19,7 +19,8 @@ commit_time = Config.read(Config.KEY.GIT_COMMIT_DATE)
 log_file = Config.read(Config.KEY.UNITY_BUILD_LOG)
 
 # config
-slack_channel = SlackCommand.find_user_id(email)
+#slack_channel = SlackCommand.find_user_id(email)
+slack_channel = SlackCommand.get_channel(Config.read(Config.KEY.SLACK_DEFAULT_CHANNEL))
 build_failed = Config.read(Config.KEY.UNITY_BUILD_FAILURE)
 unity_project = Config.read(Config.KEY.UNITY_PROJECT)
 

@@ -79,7 +79,8 @@ commit_time = Config.read(Config.KEY.GIT_COMMIT_DATE)
 log_file = Config.read(Config.KEY.UNITY_BUILD_LOG)
 
 # config
-slack_channel = SlackCommand.find_user_id(email)
+#slack_channel = SlackCommand.find_user_id(email)
+slack_channel = SlackCommand.get_channel(Config.read(Config.KEY.SLACK_DEFAULT_CHANNEL))
 build_failed = Config.read(Config.KEY.UNITY_BUILD_FAILURE)
 unity_project = Config.read(Config.KEY.UNITY_PROJECT)
 
@@ -109,12 +110,9 @@ elif build_failed:
 {commit_time}
 {mention_user} {build_id} - {committer} | {branch}-{git_hash}
 Unity build *FAILED*
-```
-{errors}
-```
 Detail: {pipeline_url}'''
     # SlackCommand.send_message(slack_channel, msg)
-    SlackCommand.send_file(slack_channel, log_file, f"{build_id} log", msg)
+    SlackCommand.send_message(slack_channel, msg)
 else:
     # Send UNKNOWN ERROR
     print("Failed to find error")
@@ -125,4 +123,4 @@ Unity build *CRASH*
 Unknown Reason. See stacktrace for more information
 Detail: {pipeline_url}
 '''
-    SlackCommand.send_file(slack_channel, log_file, f"{build_id} log", msg)
+    SlackCommand.send_message(slack_channel, msg)

@@ -52,7 +52,7 @@ for (dirpath, dirnames, filenames) in os.walk(build_folder):
 ```{git_full_message}```
 Unity build *SUCCESS*
 <{pipeline_url}|Console Log>
-<{full_url}|Download>
+<{full_url}|Download Link>
 '''
             SlackCommand.send_message(slack_channel, msg)
             #SlackCommand.send_file(slack_channel, apk_file, f"{file}", msg)
@@ -69,7 +69,8 @@ Unity build *SUCCESS*
 {build_id} - {committer} | {branch}-{git_hash}
 ```{git_full_message}```
 Unity production build *SUCCESS*
-<{google_url}|Google Play>
+<{pipeline_url}|Console Log>
+<{google_url}|Google Play Download>
 '''
             SlackCommand.send_message(slack_channel, msg)
             #SlackCommand.send_file(slack_channel, aab_file, f"{file}", msg)
