@@ -6,7 +6,8 @@ import Config
 
 # Read doc https://api.slack.com/methods/files.upload
 
-slack_token = Config.read(Config.KEY.SLACK_BOT_TOKEN).strip().replace('"', "")
+#slack_token = Config.read(Config.KEY.SLACK_BOT_TOKEN).strip().replace('"', "")
+slack_token = os.environ.get("SLACK_BOT_TOKEN", "")
 slack_client = WebClient(slack_token)
 slack_default_channel = Config.read(Config.KEY.SLACK_DEFAULT_CHANNEL).replace('"', "")
 
