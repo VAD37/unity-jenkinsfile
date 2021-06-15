@@ -35,7 +35,7 @@ build_folder = os.path.join(unity_project, "build")
 build_url = os.environ["BUILD_URL"]
 workspace = os.environ["WORKSPACE"]
 artifact_url = build_url + "artifact"
-
+google_url = "https://play.google.com/store/apps/details?id=com.unimob.merge.defense&hl=en_US&gl=US"
 # Not use function def due to function not get local variable run in jenkins
 for (dirpath, dirnames, filenames) in os.walk(build_folder):
     for file in filenames:
@@ -69,8 +69,7 @@ Unity build *SUCCESS*
 {build_id} - {committer} | {branch}-{git_hash}
 ```{git_full_message}```
 Unity production build *SUCCESS*
-<{pipeline_url}|Console Log>
-<{full_url}|Download>
+<{google_url}|Google Play>
 '''
             SlackCommand.send_message(slack_channel, msg)
             #SlackCommand.send_file(slack_channel, aab_file, f"{file}", msg)

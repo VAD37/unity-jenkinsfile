@@ -1,5 +1,7 @@
-from slack import WebClient
-from slack.errors import SlackApiError
+import os
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+
 import Config
 
 # Read doc https://api.slack.com/methods/files.upload
@@ -7,7 +9,6 @@ import Config
 slack_token = Config.read(Config.KEY.SLACK_BOT_TOKEN).strip().replace('"', "")
 slack_client = WebClient(slack_token)
 slack_default_channel = Config.read(Config.KEY.SLACK_DEFAULT_CHANNEL).replace('"', "")
-
 
 def send_message(channel, msg):
     try:
@@ -94,3 +95,5 @@ def get_mention_list(input: str):
             if found is not None:
                 users_found.append(found)
     print(" ".join(users_found))
+
+
