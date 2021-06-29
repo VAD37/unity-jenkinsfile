@@ -5,15 +5,17 @@ from slack_sdk.errors import SlackApiError
 import Config
 
 # Read doc https://api.slack.com/methods/files.upload
-
+#https://i.imgur.com/dDIqDf2s.jpg
 #slack_token = Config.read(Config.KEY.SLACK_BOT_TOKEN).strip().replace('"', "")
 slack_token = os.environ.get("SLACK_BOT_TOKEN", "")
 slack_client = WebClient(slack_token)
 slack_default_channel = Config.read(Config.KEY.SLACK_DEFAULT_CHANNEL).replace('"', "")
+iconurl = Config.read(Config.KEY.SLACK_ICON_URL).replace('"', "")
+# iconurl = "https://i.imgur.com/dDIqDf2s.jpg"
 
 def send_message(channel, msg):
     try:
-        response = slack_client.chat_postMessage(channel=channel, text=msg)
+        response = slack_client.chat_postMessage(channel=channel, text=msg, icon_url=iconurl)
         print(response)
     except SlackApiError as e:
         print(f"message: {e.message}, response: {e.response}")
@@ -21,7 +23,7 @@ def send_message(channel, msg):
 
 def send_direct_message(email, msg):
     try:
-        response = slack_client.chat_postMessage(channel=find_user_id(email), text=msg)
+        response = slack_client.chat_postMessage(channel=find_user_id(email), text=msg, icon_url=iconurl)
         print(response)
     except SlackApiError as e:
         print(f"message: {e.message}, response: {e.response}")
@@ -29,8 +31,7 @@ def send_direct_message(email, msg):
 
 def send_file(channel, file_path, file_title, comment):
     try:
-        response = slack_client.files_upload(channels=channel, file=file_path, title=file_title,
-                                             initial_comment=comment)
+        response = slack_client.files_upload(channels=channel, file=file_path, title=file_title, initial_comment=comment, icon_url=iconurl)
         print(response)
     except SlackApiError as e:
         print(f"message: {e.message}, response: {e.response}")

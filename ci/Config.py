@@ -23,6 +23,7 @@ class KEY(object):
     # Slack API
     SLACK_BOT_TOKEN = "SLACK_BOT_TOKEN"
     SLACK_DEFAULT_CHANNEL = "SLACK_DEFAULT_CHANNEL"
+    SLACK_ICON_URL = "SLACK_ICON_URL"
 
     # Generate config env during CI
     COMPANY_NAME = "COMPANY_NAME"

@@ -137,7 +137,8 @@ pipeline {
             }
             steps {
                 script {
-                    // android publisher jenkins plugin 
+                    // android publisher jenkins plugin
+                    env.DATETIME_TAG = java.time.LocalDateTime.now()
                     if( "${BUILD_TARGET}" == "android" && env.BRANCH_NAME.toLowerCase().contains("production"))
                     {
                         try {
@@ -145,7 +146,8 @@ pipeline {
                                 filesPattern: '**/build/Android/*.aab',
                                 trackName: 'internal',
                                 rolloutPercentage: '100',
-                                usePreviousExpansionFilesIfMissing: true                                                    
+                                usePreviousExpansionFilesIfMissing: true,
+                                recentChangeList: [[language: 'en-GB', text: "Update ${env.BUILD_NUMBER} ${env.DATETIME_TAG}"]]
                         } catch (err) {
                             echo err.getMessage()
                         }
