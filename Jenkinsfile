@@ -142,7 +142,7 @@ pipeline {
                     if( "${BUILD_TARGET}" == "android" && env.BRANCH_NAME.toLowerCase().contains("production"))
                     {
                         try {
-                            androidApkUpload googleCredentialsId: 'google_publisher_account_unimob_global',
+                            androidApkUpload googleCredentialsId: 'Google Play Android Developer',
                                 filesPattern: '**/build/Android/*.aab',
                                 trackName: 'internal',
                                 rolloutPercentage: '100',
