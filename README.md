@@ -35,7 +35,7 @@ Go into jenkins settings/ Manage Nodes and set all agents with tags "Windows" so
 # Enviroment Variables Requirements
 
 **IMPORANT** Make sure git Bash or mingw64 bash.exe be on top in `Path` environment. Other linux shell command can still be accessible when use in pipeline.
-After reset environment. Restart server.
+After reset environment. Restart server. (This was required due to conflict between '\' and '/' in old window-jenkins version)
 
 ![sapmple](/doc/env-path.jpg)
 
@@ -44,8 +44,6 @@ After reset environment. Restart server.
 `UNITY_INSTALL_LOCATION` : default to `C:\\Program Files\\Unity\\Hub\\Editor` (Required to find Unity path)
 
 `UNITYHUB` : default to `C:\Program Files\Unity Hub\Unity Hub.exe` (Required to install missing Unity version through Hub)
-
-`JENKINS_BUILD_ARCHIVE` : Second backup location for all build results files. Includes .aab and symbol link file for later debug. (If not set, Errors will be ignore and build file only accessible on jenkins server)
 
 ## Helpful tips
 
@@ -94,9 +92,9 @@ public class BuildProcessor : IPreprocessBuildWithReport {
 
 Search these Jenkins server plugins: All Blue Ocean, Job DSL, Pipeline, PowerShell
 
-Set Always scan with interval 1 minute because you dont have website server.
+Set Always scan with interval 1 minute.
 
-In jenkins server installation folder. Change `jenkins.xml` line to this.
+In jenkins server installation folder. Change `jenkins.xml` line to this. (extra file size limit)
 
 `<arguments>-Xrs -Xss4m -Xmx1024m -Dhudson.lifecycle=hudson.lifecycle.WindowsServiceLifecycle -jar "%BASE%\jenkins.war" --httpListenAddress=127.0.0.1 --httpPort=8080 --webroot="%BASE%\war" --prefix="/jenkins"</arguments>`
 
