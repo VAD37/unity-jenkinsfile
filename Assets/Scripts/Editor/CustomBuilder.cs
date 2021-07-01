@@ -13,9 +13,9 @@ public static class CustomBuilder
 {
     private const string RootTools = "Tools/JenkinsPipeline/";
     private const string UserKeystore = "user.keystore";
-    private const string KeyaliasName = "unimob";
-    private const string KeyaliasPass = "ffsmobile";
-    private const string KeystorePass = "ffsmobile";
+    private const string KeyaliasName = "";
+    private const string KeyaliasPass = "";
+    private const string KeystorePass = "";
 
 
     #region Build
