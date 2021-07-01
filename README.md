@@ -12,15 +12,10 @@ Made specifically for Windows Standalone Server. (Meaning no special install and
 
 Read [pipeline doc](/JenkinsFiles/ci/README.md) for how to setup UnityProject builder script.
 
-## Install in Package Manager
+## Install
+Simply copy this entire project to root .git folder. Jenkins only need to detect Jenkinsfile in root folder.
 
-Add this line to `manifest.json`
-
-`"com.vad37.unity-jenkinsfile": "https://github.com/VAD37/unity-jenkinsfile.git",`
-
-The script will copy all files to your Unity project. Access possible unity config in `Tools/Jenkins Build`
-
-If you manually copy them then change important *Static Variables* on top of `Jenkinsfile`
+`git clone https://github.com/VAD37/unity-jenkinsfile.git`
 
 ## Setup Jenkins Server
 
