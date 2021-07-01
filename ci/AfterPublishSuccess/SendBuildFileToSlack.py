@@ -35,7 +35,8 @@ build_folder = os.path.join(unity_project, "build")
 build_url = os.environ["BUILD_URL"]
 workspace = os.environ["WORKSPACE"]
 artifact_url = build_url + "artifact"
-google_url = "https://play.google.com/store/apps/details?id=com.unimob.merge.defense&hl=en_US&gl=US"
+android_identifier = Config.read(Config.KEY.ANDROID_IDENTIFIER)
+google_url = f"https://play.google.com/store/apps/details?id={android_identifier}&hl=en_US&gl=US"
 # Not use function def due to function not get local variable run in jenkins
 for (dirpath, dirnames, filenames) in os.walk(build_folder):
     for file in filenames:

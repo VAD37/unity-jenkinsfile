@@ -49,6 +49,7 @@ def unity_settings_env():
     doc = yaml.safe_load(project_setting)
     Config.write(Config.KEY.COMPANY_NAME, doc["PlayerSettings"]["companyName"])
     Config.write(Config.KEY.PROJECT_NAME, doc["PlayerSettings"]["productName"])
+    Config.write(Config.KEY.ANDROID_IDENTIFIER, doc["PlayerSettings"]["applicationIdentifier"]["Android"])
 
     # Read project version
     project_version = os.path.join(project_dir, "ProjectSettings", "ProjectVersion.txt")
@@ -106,8 +107,5 @@ def git_info_env():
     Config.write(Config.KEY.GIT_SUBJECT, run_command(f'git log -1 --pretty=format:%s'))
     Config.write(Config.KEY.GIT_BODY, run_command(f'git log -1 --pretty=format:%b'))
     Config.write(Config.KEY.GIT_RAW_BODY, run_command(f'git log -1 --pretty=format:%B'))
-
-
-
 
 run_init()
