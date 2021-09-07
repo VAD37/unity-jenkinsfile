@@ -8,7 +8,7 @@ Just drag these files in and it will run on your Jenkins Server.
 
 Multi-branch Jenkinsfile and python script for automated **Android** build Production: Install Unity -> Build Unity --> Push to internal Google Play -> Send Slack notification.
 
-Made specifically for Windows Standalone Server. (Meaning no special install and setup for server. Just install jenkins setup some system variables and it will ready to go)
+Made specifically for Windows Standalone Server. (Meaning no special install and setup for server. Just install jenkins setup some system variables and it will ready to go). With MacOSX, there are lots of special steps to setup fastlane, allow open ssh port with jenkins. You have to figure out on your own.
 
 Read [pipeline doc](/JenkinsFiles/ci/README.md) for how to setup UnityProject builder script.
 
